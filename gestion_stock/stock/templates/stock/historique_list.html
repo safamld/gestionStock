@@ -1,0 +1,110 @@
+{% extends "stock/base.html" %}
+
+{% block title %}Historique des Suppressions - Gestion de Stock{% endblock %}
+{% block header %}Historique des Suppressions{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <p class="text-gray-600">
+        <i class="fas fa-history mr-2"></i>
+        <strong>{{ paginator.count }}</strong> événement(s) enregistré(s)
+    </p>
+</div>
+
+<!-- Statistiques -->
+{% if stats %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {% for stat in stats %}
+            <div class="card bg-white rounded-lg p-4">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600">{{ stat.count }}</div>
+                    <p class="text-gray-600 text-sm mt-1">
+                        {{ stat.type_objet|upper }} supprimé(s)
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if historiques %}
+    <div class="card bg-white rounded-lg overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-100 border-b-2 border-gray-300">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date de Suppression</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Données Archivées</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for historique in historiques %}
+                    <tr class="border-b hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 text-sm">
+                            {% if historique.type_objet == 'produit' %}
+                                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">
+                                    <i class="fas fa-box mr-1"></i>Produit
+                                </span>
+                            {% elif historique.type_objet == 'commande' %}
+                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
+                                    <i class="fas fa-shopping-cart mr-1"></i>Commande
+                                </span>
+                            {% else %}
+                                <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-bold">
+                                    <i class="fas fa-file-invoice mr-1"></i>Facture
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm font-mono font-bold text-gray-600">
+                            #{{ historique.id_objet }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {{ historique.date_suppression|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <details class="cursor-pointer">
+                                <summary class="text-blue-600 hover:text-blue-800 font-semibold">
+                                    <i class="fas fa-chevron-down mr-2"></i>Voir les données
+                                </summary>
+                                <div class="mt-2 bg-gray-50 p-3 rounded text-xs font-mono">
+                                    {% for key, value in historique.donnees_supprimees.items %}
+                                        <div class="py-1">
+                                            <strong>{{ key }}:</strong> {{ value }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <div class="mt-6 flex justify-center items-center space-x-2">
+            {% if page_obj.has_previous %}
+                <a href="?page=1" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">« Première</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">‹ Précédente</a>
+            {% endif %}
+            
+            <span class="text-gray-600 px-4 py-2">
+                Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">Suivante ›</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">Dernière »</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="card bg-white rounded-lg p-12 text-center">
+        <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500 text-lg">Aucun historique trouvé</p>
+        <p class="text-gray-400 text-sm mt-2">Les suppressions seront enregistrées ici</p>
+    </div>
+{% endif %}
+{% endblock %}

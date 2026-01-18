@@ -1,0 +1,85 @@
+{% extends "stock/base.html" %}
+
+{% block title %}Facture #{{ facture.code_facture }} - Gestion de Stock{% endblock %}
+{% block header %}Facture #{{ facture.code_facture }}{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Détails Facture -->
+    <div class="lg:col-span-2 card bg-white rounded-lg p-8">
+        <!-- En-tête -->
+        <div class="border-b pb-6 mb-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-file-invoice text-purple-600 mr-2"></i>Facture #{{ facture.code_facture }}
+            </h3>
+            <p class="text-gray-500">{{ facture.date_facture|date:"d/m/Y H:i" }}</p>
+        </div>
+        
+        <!-- Statut -->
+        <div class="mb-6 p-4 rounded-lg {% if facture.statut == 'brouillon' %}bg-gray-100{% elif facture.statut == 'validee' %}bg-blue-100{% elif facture.statut == 'payee' %}bg-green-100{% else %}bg-red-100{% endif %}">
+            <p class="text-sm text-gray-600">STATUT ACTUEL</p>
+            <p class="text-2xl font-bold {% if facture.statut == 'brouillon' %}text-gray-800{% elif facture.statut == 'validee' %}text-blue-800{% elif facture.statut == 'payee' %}text-green-800{% else %}text-red-800{% endif %}">
+                {% if facture.statut == 'brouillon' %}
+                    <i class="fas fa-file-alt mr-2"></i>Brouillon
+                {% elif facture.statut == 'validee' %}
+                    <i class="fas fa-check mr-2"></i>Validée
+                {% elif facture.statut == 'payee' %}
+                    <i class="fas fa-check-double mr-2"></i>Payée
+                {% else %}
+                    <i class="fas fa-times mr-2"></i>Annulée
+                {% endif %}
+            </p>
+        </div>
+        
+        <!-- Commande associée -->
+        <div class="mb-6">
+            <h4 class="font-semibold text-gray-800 mb-3">Commande</h4>
+            <div class="border rounded-lg p-4 bg-gray-50">
+                <a href="{% url 'stock:commande_detail' facture.commande.pk %}" class="text-blue-600 hover:text-blue-800 font-bold">
+                    Commande #{{ facture.commande.code_cmd }}
+                </a>
+                <p class="text-gray-600 mt-2">Produit: {{ facture.commande.code_prod.nom_prod }}</p>
+                <p class="text-gray-600">Quantité: ×{{ facture.commande.quantite_cmd }}</p>
+            </div>
+        </div>
+        
+        <!-- Montants -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-gray-600 text-sm mb-1">MONTANT UNITAIRE</p>
+                <p class="text-2xl font-bold text-gray-800">{{ facture.commande.code_prod.prix_unit|floatformat:2 }}€</p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-600">
+                <p class="text-gray-600 text-sm mb-1">MONTANT TOTAL</p>
+                <p class="text-2xl font-bold text-purple-600">{{ facture.montant_total|floatformat:2 }}€</p>
+            </div>
+        </div>
+        
+        <!-- Dates -->
+        <div class="text-sm text-gray-500 border-t pt-4">
+            <p><i class="fas fa-calendar mr-2"></i>Créée le: {{ facture.date_facture|date:"d/m/Y H:i" }}</p>
+            <p><i class="fas fa-clock mr-2"></i>Modifiée le: {{ facture.date_modification|date:"d/m/Y H:i" }}</p>
+        </div>
+    </div>
+    
+    <!-- Actions -->
+    <div>
+        <div class="card bg-white rounded-lg p-6">
+            <h3 class="font-semibold text-gray-800 mb-4">
+                <i class="fas fa-cog mr-2"></i>Actions
+            </h3>
+            <div class="space-y-3">
+                <a href="{% url 'stock:facture_update' facture.pk %}" class="block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition font-semibold text-center text-sm">
+                    <i class="fas fa-edit mr-2"></i>Modifier Statut
+                </a>
+                <a href="{% url 'stock:facture_delete' facture.pk %}" class="block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition font-semibold text-center text-sm">
+                    <i class="fas fa-trash mr-2"></i>Supprimer
+                </a>
+                <a href="{% url 'stock:facture_list' %}" class="block bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition font-semibold text-center text-sm">
+                    <i class="fas fa-arrow-left mr-2"></i>Retour
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

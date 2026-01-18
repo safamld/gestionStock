@@ -1,0 +1,96 @@
+{% extends "stock/base.html" %}
+
+{% block title %}{% if object %}Modifier{% else %}Ajouter{% endif %} Produit - Gestion de Stock{% endblock %}
+{% block header %}{% if object %}Modifier le produit{% else %}Ajouter un produit{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <div class="card bg-white rounded-lg p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Nom du produit -->
+            <div>
+                <label for="{{ form.nom_prod.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-tag mr-2"></i>Nom du produit
+                    <span class="text-red-600">*</span>
+                </label>
+                {{ form.nom_prod }}
+                {% if form.nom_prod.errors %}
+                    <div class="text-red-600 text-sm mt-1">
+                        {{ form.nom_prod.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Description -->
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-align-left mr-2"></i>Description
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="text-red-600 text-sm mt-1">
+                        {{ form.description.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Quantité et Prix -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="{{ form.quantite.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-cube mr-2"></i>Quantité
+                        <span class="text-red-600">*</span>
+                    </label>
+                    {{ form.quantite }}
+                    {% if form.quantite.errors %}
+                        <div class="text-red-600 text-sm mt-1">
+                            {{ form.quantite.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.prix_unit.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-euro-sign mr-2"></i>Prix unitaire
+                        <span class="text-red-600">*</span>
+                    </label>
+                    {{ form.prix_unit }}
+                    {% if form.prix_unit.errors %}
+                        <div class="text-red-600 text-sm mt-1">
+                            {{ form.prix_unit.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Boutons -->
+            <div class="flex space-x-4 pt-4 border-t">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition font-semibold">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if object %}Modifier{% else %}Créer{% endif %} le produit
+                </button>
+                <a href="{% url 'stock:produit_list' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition font-semibold">
+                    <i class="fas fa-times mr-2"></i>Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Styles des champs de formulaire */
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+        @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+    }
+    
+    textarea {
+        @apply resize-vertical;
+        min-height: 100px;
+    }
+</style>
+{% endblock %}

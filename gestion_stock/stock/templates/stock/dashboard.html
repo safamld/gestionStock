@@ -1,0 +1,131 @@
+{% extends "stock/base.html" %}
+
+{% block title %}Tableau de Bord - Gestion de Stock{% endblock %}
+{% block header %}Tableau de Bord{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Card: Total Produits -->
+    <div class="card bg-white rounded-lg p-6 text-center hover:shadow-lg transition">
+        <div class="text-4xl font-bold text-blue-600 mb-2">{{ total_produits }}</div>
+        <p class="text-gray-600 mb-4"><i class="fas fa-box mr-2"></i>Produits</p>
+        <a href="{% url 'stock:produit_list' %}" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">
+            Voir tous →
+        </a>
+    </div>
+    
+    <!-- Card: Total Commandes -->
+    <div class="card bg-white rounded-lg p-6 text-center hover:shadow-lg transition">
+        <div class="text-4xl font-bold text-green-600 mb-2">{{ total_commandes }}</div>
+        <p class="text-gray-600 mb-4"><i class="fas fa-shopping-cart mr-2"></i>Commandes</p>
+        <a href="{% url 'stock:commande_list' %}" class="text-green-600 hover:text-green-800 text-sm font-semibold">
+            Voir toutes →
+        </a>
+    </div>
+    
+    <!-- Card: Total Factures -->
+    <div class="card bg-white rounded-lg p-6 text-center hover:shadow-lg transition">
+        <div class="text-4xl font-bold text-purple-600 mb-2">{{ total_factures }}</div>
+        <p class="text-gray-600 mb-4"><i class="fas fa-file-invoice mr-2"></i>Factures</p>
+        <a href="{% url 'stock:facture_list' %}" class="text-purple-600 hover:text-purple-800 text-sm font-semibold">
+            Voir toutes →
+        </a>
+    </div>
+    
+    <!-- Card: Factures Non Payées -->
+    <div class="card bg-white rounded-lg p-6 text-center hover:shadow-lg transition {% if factures_impayees > 0 %}border-l-4 border-red-500{% endif %}">
+        <div class="text-4xl font-bold {% if factures_impayees > 0 %}text-red-600{% else %}text-gray-600{% endif %} mb-2">
+            {{ factures_impayees }}
+        </div>
+        <p class="text-gray-600 mb-4"><i class="fas fa-exclamation-circle mr-2"></i>À payer</p>
+        <a href="{% url 'stock:facture_list' %}" class="text-red-600 hover:text-red-800 text-sm font-semibold">
+            Détails →
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Dernières Commandes -->
+    <div class="card bg-white rounded-lg p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">
+            <i class="fas fa-clock mr-2 text-blue-600"></i>Dernières Commandes
+        </h3>
+        {% if dernieres_commandes %}
+            <div class="space-y-3">
+                {% for commande in dernieres_commandes %}
+                    <div class="border-b pb-3 last:border-b-0 flex justify-between items-center">
+                        <div>
+                            <p class="font-semibold text-gray-800">
+                                {{ commande.code_prod.nom_prod }}
+                            </p>
+                            <p class="text-sm text-gray-500">
+                                <i class="fas fa-calendar mr-1"></i>{{ commande.date_commande|date:"d/m/Y H:i" }}
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-green-600">×{{ commande.quantite_cmd }}</p>
+                            <a href="{% url 'stock:commande_detail' commande.pk %}" class="text-blue-600 hover:text-blue-800 text-xs">
+                                Détail
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500 text-center py-8">
+                <i class="fas fa-inbox text-3xl mb-2 block"></i>
+                Aucune commande
+            </p>
+        {% endif %}
+    </div>
+    
+    <!-- Produits en Rupture de Stock -->
+    <div class="card bg-white rounded-lg p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">
+            <i class="fas fa-exclamation-triangle mr-2 text-red-600"></i>Stock Critique
+        </h3>
+        {% if produits_rupture %}
+            <div class="space-y-3">
+                {% for produit in produits_rupture %}
+                    <div class="border-b pb-3 last:border-b-0 flex justify-between items-center bg-red-50 p-2 rounded">
+                        <div>
+                            <p class="font-semibold text-gray-800">{{ produit.nom_prod }}</p>
+                            <p class="text-sm text-red-600 font-bold">Rupture de stock</p>
+                        </div>
+                        <a href="{% url 'stock:produit_update' produit.pk %}" class="bg-red-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-700">
+                            Réapprovisionner
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500 text-center py-8">
+                <i class="fas fa-check-circle text-3xl text-green-600 mb-2 block"></i>
+                Tous les produits sont en stock
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Actions Rapides -->
+<div class="card bg-white rounded-lg p-6 mb-8">
+    <h3 class="text-xl font-bold text-gray-800 mb-4">
+        <i class="fas fa-rocket mr-2 text-blue-600"></i>Actions Rapides
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a href="{% url 'stock:produit_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition text-center font-semibold">
+            <i class="fas fa-plus mr-2"></i>Ajouter Produit
+        </a>
+        <a href="{% url 'stock:commande_create' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition text-center font-semibold">
+            <i class="fas fa-shopping-cart mr-2"></i>Nouvelle Commande
+        </a>
+        <a href="{% url 'stock:facture_create' %}" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg transition text-center font-semibold">
+            <i class="fas fa-file-invoice mr-2"></i>Nouvelle Facture
+        </a>
+        <a href="{% url 'stock:statistiques' %}" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg transition text-center font-semibold">
+            <i class="fas fa-chart-bar mr-2"></i>Statistiques
+        </a>
+    </div>
+</div>
+
+{% endblock %}

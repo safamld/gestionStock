@@ -1,0 +1,35 @@
+{% extends "stock/base.html" %}
+
+{% block title %}Confirmer la suppression - Gestion de Stock{% endblock %}
+{% block header %}Confirmer la suppression{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto card bg-white rounded-lg p-8">
+    <div class="text-center mb-6">
+        <i class="fas fa-exclamation-circle text-6xl text-red-600 mb-4"></i>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Êtes-vous sûr ?</h3>
+    </div>
+    
+    <div class="bg-red-50 border-l-4 border-red-600 p-4 mb-6">
+        <p class="text-gray-800">
+            Vous êtes sur le point de supprimer la commande:
+        </p>
+        <p class="font-bold text-lg text-red-600 mt-2">Commande #{{ object.code_cmd }}</p>
+        <p class="text-gray-800 mt-2">{{ object.code_prod.nom_prod }} (×{{ object.quantite_cmd }})</p>
+        <p class="text-sm text-gray-600 mt-3">
+            <i class="fas fa-info-circle mr-2"></i>
+            Le stock de ce produit sera restauré lors de la suppression.
+        </p>
+    </div>
+    
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition font-semibold">
+            <i class="fas fa-trash mr-2"></i>Oui, supprimer la commande
+        </button>
+        <a href="{% url 'stock:commande_detail' object.pk %}" class="block w-full bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition font-semibold text-center">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </form>
+</div>
+{% endblock %}

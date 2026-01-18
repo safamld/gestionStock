@@ -1,0 +1,76 @@
+{% extends "stock/base.html" %}
+
+{% block title %}{% if object %}Modifier{% else %}Nouvelle{% endif %} Commande - Gestion de Stock{% endblock %}
+{% block header %}{% if object %}Modifier la commande{% else %}Créer une commande{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <div class="card bg-white rounded-lg p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Produit -->
+            <div>
+                <label for="{{ form.code_prod.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-box mr-2"></i>Produit
+                    <span class="text-red-600">*</span>
+                </label>
+                {{ form.code_prod }}
+                {% if form.code_prod.errors %}
+                    <div class="text-red-600 text-sm mt-1">
+                        {{ form.code_prod.errors }}
+                    </div>
+                {% endif %}
+                <p class="text-xs text-gray-500 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Seuls les produits avec du stock sont disponibles
+                </p>
+            </div>
+            
+            <!-- Quantité -->
+            <div>
+                <label for="{{ form.quantite_cmd.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-cube mr-2"></i>Quantité
+                    <span class="text-red-600">*</span>
+                </label>
+                {{ form.quantite_cmd }}
+                {% if form.quantite_cmd.errors %}
+                    <div class="text-red-600 text-sm mt-1">
+                        {{ form.quantite_cmd.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Info de stock -->
+            {% if not object %}
+                <div class="bg-blue-50 border-l-4 border-blue-600 p-4">
+                    <p class="text-sm text-gray-700">
+                        <i class="fas fa-info-circle mr-2 text-blue-600"></i>
+                        <strong>Note:</strong> Créer une commande déduira automatiquement la quantité du stock.
+                    </p>
+                </div>
+            {% endif %}
+            
+            <!-- Boutons -->
+            <div class="flex space-x-4 pt-4 border-t">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition font-semibold">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if object %}Modifier{% else %}Créer{% endif %} la commande
+                </button>
+                <a href="{% url 'stock:commande_list' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition font-semibold">
+                    <i class="fas fa-times mr-2"></i>Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    select {
+        @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
+    }
+    input[type="number"] {
+        @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
+    }
+</style>
+{% endblock %}

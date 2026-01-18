@@ -1,0 +1,93 @@
+{% extends "stock/base.html" %}
+
+{% block title %}{{ produit.nom_prod }} - Gestion de Stock{% endblock %}
+{% block header %}{{ produit.nom_prod }}{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Détails Produit -->
+    <div class="lg:col-span-2 card bg-white rounded-lg p-8">
+        <div class="border-b pb-6 mb-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-box text-blue-600 mr-2"></i>{{ produit.nom_prod }}
+            </h3>
+            <p class="text-gray-500">Code: #{{ produit.code_prod }}</p>
+        </div>
+        
+        <!-- Informations -->
+        <div class="grid grid-cols-2 gap-6 mb-6">
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-gray-600 text-sm mb-1">QUANTITÉ EN STOCK</p>
+                <p class="text-3xl font-bold {% if produit.quantite > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                    {{ produit.quantite }}
+                </p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-gray-600 text-sm mb-1">PRIX UNITAIRE</p>
+                <p class="text-3xl font-bold text-blue-600">{{ produit.prix_unit|floatformat:2 }}€</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg col-span-2">
+                <p class="text-gray-600 text-sm mb-1">VALEUR TOTALE DU STOCK</p>
+                <p class="text-3xl font-bold text-purple-600">{{ produit.total_valeur_stock|floatformat:2 }}€</p>
+            </div>
+        </div>
+        
+        <!-- Description -->
+        {% if produit.description %}
+            <div class="mb-6">
+                <h4 class="font-semibold text-gray-800 mb-2">Description</h4>
+                <p class="text-gray-600 whitespace-pre-wrap">{{ produit.description }}</p>
+            </div>
+        {% endif %}
+        
+        <!-- Métadonnées -->
+        <div class="text-sm text-gray-500 border-t pt-4">
+            <p><i class="fas fa-calendar mr-2"></i>Créé le: {{ produit.date_creation|date:"d/m/Y H:i" }}</p>
+        </div>
+    </div>
+    
+    <!-- Actions et Commandes -->
+    <div>
+        <!-- Boutons d'action -->
+        <div class="card bg-white rounded-lg p-6 mb-6">
+            <h3 class="font-semibold text-gray-800 mb-4">
+                <i class="fas fa-cog mr-2"></i>Actions
+            </h3>
+            <div class="space-y-3">
+                <a href="{% url 'stock:produit_update' produit.pk %}" class="block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition font-semibold text-center">
+                    <i class="fas fa-edit mr-2"></i>Modifier
+                </a>
+                <a href="{% url 'stock:produit_delete' produit.pk %}" class="block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition font-semibold text-center">
+                    <i class="fas fa-trash mr-2"></i>Supprimer
+                </a>
+                <a href="{% url 'stock:produit_list' %}" class="block bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition font-semibold text-center">
+                    <i class="fas fa-arrow-left mr-2"></i>Retour
+                </a>
+            </div>
+        </div>
+        
+        <!-- Commandes récentes -->
+        {% if commandes %}
+            <div class="card bg-white rounded-lg p-6">
+                <h3 class="font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-shopping-cart mr-2"></i>Commandes ({{ nombre_commandes }})
+                </h3>
+                <div class="space-y-2 max-h-96 overflow-y-auto">
+                    {% for commande in commandes %}
+                        <div class="border-b pb-2 last:border-b-0">
+                            <p class="font-semibold text-gray-800">×{{ commande.quantite_cmd }}</p>
+                            <p class="text-xs text-gray-500">{{ commande.date_commande|date:"d/m/Y H:i" }}</p>
+                            <a href="{% url 'stock:commande_detail' commande.pk %}" class="text-blue-600 hover:text-blue-800 text-xs">
+                                Cmd #{{ commande.code_cmd }}
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+                <p class="text-sm text-gray-600 mt-3 pt-3 border-t">
+                    <strong>Total commandé:</strong> {{ quantite_totale_commandee }} unités
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
