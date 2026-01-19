@@ -1,0 +1,359 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestion de Stock - Administration{% endblock %}</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#1e40af',
+                        success: '#16a34a',
+                        warning: '#ea580c',
+                        danger: '#dc2626',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- CSS Grappelli (optionnel) -->
+    <link rel="stylesheet" href="{% static 'grappelli/stylesheets/screen.css' %}">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
+    
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        
+        .gradient-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #1e3a8a 100%);
+            box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.3);
+        }
+        
+        .card-modern {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .card-modern:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .btn-modern {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.6);
+        }
+        
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+        
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        
+        .badge-modern {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .badge-info {
+            background: #cffafe;
+            color: #164e63;
+        }
+    </style>
+    
+    {% block extrahead %}{% endblock %}
+</head>
+<body class="bg-gray-50">
+    <div id="container" class="flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="gradient-header text-white sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-warehouse text-3xl"></i>
+                    <div>
+                        <h1 class="text-3xl font-bold">Gestion de Stock</h1>
+                        <p class="text-blue-200 text-sm">Administration</p>
+                    </div>
+                </div>
+                
+                {% if user.is_active and user.is_staff %}
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <p class="text-sm font-medium">Bienvenue</p>
+                        <p class="text-blue-100">{{ user.get_full_name|default:user.username }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-300 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-lg"></i>
+                    </div>
+                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-modern btn-secondary ml-4" style="background: #e5e7eb; color: #1f2937; border: none; cursor: pointer;">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <a href="{% url 'admin:login' %}" class="btn-modern btn-primary">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Connexion
+                </a>
+                {% endif %}
+            </div>
+        </header>
+        
+        <!-- Messages -->
+        {% if messages %}
+        <div class="max-w-7xl mx-auto w-full px-6 py-4 mt-4">
+            {% for message in messages %}
+            <div class="flex items-start gap-4 p-4 rounded-lg mb-3 {% if message.tags %}{{ message.tags }}{% endif %}"
+                 style="background: {% if 'error' in message.tags %}#fee2e2{% elif 'warning' in message.tags %}#fef3c7{% else %}#dcfce7{% endif %};
+                        color: {% if 'error' in message.tags %}#991b1b{% elif 'warning' in message.tags %}#92400e{% else %}#166534{% endif %};">
+                <i class="fas fa-{% if 'error' in message.tags %}exclamation-circle{% elif 'warning' in message.tags %}exclamation-triangle{% else %}check-circle{% endif %} mt-1"></i>
+                <div>
+                    <p class="font-semibold">{{ message }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Main Content -->
+        <main class="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
+            {% block content %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Stats Cards -->
+                <div class="card-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium mb-1">Produits</p>
+                            <p class="text-3xl font-bold text-gray-900">11</p>
+                        </div>
+                        <div class="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-box text-blue-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium mb-1">Commandes</p>
+                            <p class="text-3xl font-bold text-gray-900">7</p>
+                        </div>
+                        <div class="w-14 h-14 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-shopping-cart text-green-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium mb-1">Factures</p>
+                            <p class="text-3xl font-bold text-gray-900">3</p>
+                        </div>
+                        <div class="w-14 h-14 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-invoice text-purple-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium mb-1">Fournisseurs</p>
+                            <p class="text-3xl font-bold text-gray-900">1</p>
+                        </div>
+                        <div class="w-14 h-14 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-building text-orange-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modules Section -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Modules</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Produits -->
+                    <div class="card-modern p-6 hover:shadow-lg transition">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-box text-blue-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900">Produits</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">Gérez votre inventaire de produits</p>
+                        <a href="{% url 'admin:stock_produit_changelist' %}" class="btn-modern btn-primary w-full text-center">
+                            <i class="fas fa-arrow-right mr-2"></i>Gérer
+                        </a>
+                    </div>
+                    
+                    <!-- Commandes -->
+                    <div class="card-modern p-6 hover:shadow-lg transition">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-shopping-cart text-green-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900">Commandes</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">Consultez les commandes en cours</p>
+                        <a href="{% url 'admin:stock_commande_changelist' %}" class="btn-modern btn-primary w-full text-center">
+                            <i class="fas fa-arrow-right mr-2"></i>Gérer
+                        </a>
+                    </div>
+                    
+                    <!-- Factures -->
+                    <div class="card-modern p-6 hover:shadow-lg transition">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-invoice text-purple-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900">Factures</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">Gérez les factures et paiements</p>
+                        <a href="{% url 'admin:stock_facture_changelist' %}" class="btn-modern btn-primary w-full text-center">
+                            <i class="fas fa-arrow-right mr-2"></i>Gérer
+                        </a>
+                    </div>
+                    
+                    <!-- Fournisseurs -->
+                    <div class="card-modern p-6 hover:shadow-lg transition">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-building text-orange-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900">Fournisseurs</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">Contactez vos fournisseurs</p>
+                        <a href="{% url 'admin:stock_fournisseur_changelist' %}" class="btn-modern btn-primary w-full text-center">
+                            <i class="fas fa-arrow-right mr-2"></i>Gérer
+                        </a>
+                    </div>
+                    
+                    <!-- Notifications -->
+                    <div class="card-modern p-6 hover:shadow-lg transition">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-bell text-red-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900">Notifications</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">Vos alertes et notifications</p>
+                        <a href="{% url 'admin:stock_notification_changelist' %}" class="btn-modern btn-primary w-full text-center">
+                            <i class="fas fa-arrow-right mr-2"></i>Gérer
+                        </a>
+                    </div>
+                    
+                    <!-- Historique -->
+                    <div class="card-modern p-6 hover:shadow-lg transition">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-history text-gray-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900">Historique</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">Consultez l'historique des modifications</p>
+                        <a href="{% url 'admin:stock_historique_changelist' %}" class="btn-modern btn-primary w-full text-center">
+                            <i class="fas fa-arrow-right mr-2"></i>Voir
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endblock %}
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-gray-900 text-gray-400 py-8 mt-12">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div>
+                        <h4 class="text-white font-bold mb-4">Gestion de Stock</h4>
+                        <p class="text-sm">Solution complète de gestion d'inventaire</p>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold mb-4">Fonctionnalités</h4>
+                        <ul class="text-sm space-y-2">
+                            <li><a href="#" class="hover:text-white transition">Produits</a></li>
+                            <li><a href="#" class="hover:text-white transition">Commandes</a></li>
+                            <li><a href="#" class="hover:text-white transition">Factures</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold mb-4">Support</h4>
+                        <ul class="text-sm space-y-2">
+                            <li><a href="#" class="hover:text-white transition">Documentation</a></li>
+                            <li><a href="#" class="hover:text-white transition">Aide</a></li>
+                            <li><a href="#" class="hover:text-white transition">Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="border-t border-gray-800 pt-8 text-center text-sm">
+                    <p>&copy; 2026 Gestion de Stock. Tous droits réservés.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    {% block extrajs %}{% endblock %}
+</body>
+</html>

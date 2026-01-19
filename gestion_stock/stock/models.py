@@ -20,6 +20,7 @@ class Produit(models.Model):
         description (str): Description détaillée du produit
         quantite (int): Quantité disponible en stock
         prix_unit (float): Prix unitaire du produit
+        photo (ImageField): Photo du produit
         date_creation (datetime): Date de création du produit
         is_deleted (bool): Marqueur pour soft delete (historique)
     """
@@ -29,6 +30,13 @@ class Produit(models.Model):
     description = models.TextField(blank=True, null=True)
     quantite = models.IntegerField(default=0)
     prix_unit = models.FloatField()
+    photo = models.ImageField(
+        upload_to='produits/%Y/%m/%d/',
+        blank=True,
+        null=True,
+        verbose_name='Photo du produit',
+        help_text='Téléchargez une image du produit (PNG, JPG, JPEG)'
+    )
     date_creation = models.DateTimeField(auto_now_add=True)
     is_deleted = models.BooleanField(default=False)  # Soft delete pour historique
     

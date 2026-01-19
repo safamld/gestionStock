@@ -1,0 +1,411 @@
+/* ==================== THEME PERSONNALISE ADMIN GRAPPELLI ==================== */
+
+/* Couleurs principales */
+:root {
+  --primary-color: #2563eb;
+  --secondary-color: #1e40af;
+  --success-color: #16a34a;
+  --warning-color: #ea580c;
+  --danger-color: #dc2626;
+  --info-color: #0284c7;
+  --dark-bg: #1f2937;
+  --light-bg: #f9fafb;
+}
+
+/* ==================== HEADER & NAVIGATION ==================== */
+
+#header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-bottom: 3px solid var(--secondary-color);
+}
+
+#header h1 a {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: white !important;
+}
+
+#site-name {
+  font-weight: 700;
+  font-size: 18px;
+  color: white;
+}
+
+.grappelli #navigation {
+  background-color: var(--dark-bg);
+  border-right: 3px solid var(--primary-color);
+}
+
+.grappelli #navigation li a {
+  color: #e5e7eb;
+  border-left: 3px solid transparent;
+  transition: all 0.3s ease;
+  padding: 12px 16px;
+}
+
+.grappelli #navigation li a:hover,
+.grappelli #navigation li a.current {
+  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--primary-color);
+  border-left-color: var(--primary-color);
+  padding-left: 20px;
+}
+
+/* ==================== LISTES ET TABLEAUX ==================== */
+
+.grappelli .results {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.grappelli .results table tbody tr:hover {
+  background-color: #f0f9ff;
+  transition: background-color 0.2s ease;
+}
+
+.grappelli .results th {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: white;
+  font-weight: 600;
+  border-bottom: 2px solid var(--secondary-color);
+}
+
+.grappelli .results th a {
+  color: white;
+}
+
+.grappelli .results th a:focus,
+.grappelli .results th a:hover {
+  color: #dbeafe;
+}
+
+/* Alternance des lignes */
+.grappelli .results tbody tr:nth-child(odd) {
+  background-color: #f9fafb;
+}
+
+.grappelli .results tbody tr:nth-child(even) {
+  background-color: white;
+}
+
+/* ==================== BOUTONS ==================== */
+
+.grappelli .submit-row {
+  background-color: transparent;
+  padding: 20px 0;
+}
+
+.grappelli input[type="submit"],
+.grappelli button[type="submit"],
+.grappelli .button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.grappelli input[type="submit"]:hover,
+.grappelli button[type="submit"]:hover,
+.grappelli .button:hover {
+  background-color: var(--secondary-color);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  transform: translateY(-2px);
+}
+
+.grappelli input[type="submit"].delete-link,
+.grappelli .button.delete-link {
+  background-color: var(--danger-color);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.grappelli input[type="submit"].delete-link:hover,
+.grappelli .button.delete-link:hover {
+  background-color: #b91c1c;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+/* ==================== FORMULAIRES ==================== */
+
+.grappelli .form-row {
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  background-color: #f9fafb;
+}
+
+.grappelli .form-row:hover {
+  background-color: #f3f4f6;
+}
+
+.grappelli label {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.grappelli input[type="text"],
+.grappelli input[type="email"],
+.grappelli input[type="password"],
+.grappelli input[type="number"],
+.grappelli textarea,
+.grappelli select {
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background-color: white;
+}
+
+.grappelli input[type="text"]:focus,
+.grappelli input[type="email"]:focus,
+.grappelli input[type="password"]:focus,
+.grappelli input[type="number"]:focus,
+.grappelli textarea:focus,
+.grappelli select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+/* ==================== BADGES ET STATUTS ==================== */
+
+.grappelli .badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  margin: 2px;
+}
+
+.badge-success {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-info {
+  background-color: #cffafe;
+  color: #164e63;
+}
+
+/* ==================== MESSAGES ==================== */
+
+.grappelli .messagelist li {
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border-left: 4px solid;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.grappelli .messagelist li.success {
+  background-color: #dcfce7;
+  border-left-color: var(--success-color);
+  color: #166534;
+}
+
+.grappelli .messagelist li.warning {
+  background-color: #fef3c7;
+  border-left-color: var(--warning-color);
+  color: #92400e;
+}
+
+.grappelli .messagelist li.error {
+  background-color: #fee2e2;
+  border-left-color: var(--danger-color);
+  color: #991b1b;
+}
+
+/* ==================== PAGINATION ==================== */
+
+.grappelli .pagination {
+  text-align: center;
+  padding: 15px 0;
+}
+
+.grappelli .pagination a,
+.grappelli .pagination span {
+  padding: 8px 12px;
+  margin: 0 4px;
+  border-radius: 4px;
+  border: 2px solid #e5e7eb;
+  color: var(--primary-color);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.grappelli .pagination a:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.grappelli .pagination .step-links span.current {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* ==================== FILTRES (SIDEBAR) ==================== */
+
+#right-sidebar h2,
+.grappelli #right-sidebar h2 {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 6px 6px 0 0;
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+.grappelli #right-sidebar ul li a {
+  padding: 10px 12px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  color: #374151;
+}
+
+.grappelli #right-sidebar ul li a:hover,
+.grappelli #right-sidebar ul li a.selected {
+  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--primary-color);
+  border-left: 3px solid var(--primary-color);
+  padding-left: 16px;
+}
+
+/* ==================== DROPDOWN & SELECT ==================== */
+
+.grappelli select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 20px;
+  padding-right: 36px;
+}
+
+/* ==================== RECHERCHE ==================== */
+
+.grappelli #searchbar {
+  background-color: white;
+  border-radius: 6px;
+  border: 2px solid #e5e7eb;
+  padding: 8px 12px;
+}
+
+.grappelli #searchbar input {
+  border: none;
+  outline: none;
+}
+
+.grappelli #searchbar input:focus {
+  box-shadow: none;
+}
+
+/* ==================== DASHBOARD ==================== */
+
+.grappelli .dashboard {
+  padding: 20px;
+}
+
+.grappelli .dashboard h1 {
+  color: var(--primary-color);
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.grappelli .dashboard .module {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.grappelli .dashboard .module h2 {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: white;
+  padding: 12px 16px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  #header h1 a {
+    font-size: 18px;
+  }
+  
+  .grappelli .results table {
+    font-size: 12px;
+  }
+  
+  .grappelli input[type="submit"],
+  .grappelli button[type="submit"],
+  .grappelli .button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ==================== ANIMATIONS ==================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.grappelli .module,
+.grappelli .form-row,
+.grappelli .results {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ==================== COULEURS PERSONNALISEES POUR STATUTS ==================== */
+
+.status-actif {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.status-inactif {
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
+.status-principal {
+  color: #f59e0b;
+  font-weight: 600;
+}

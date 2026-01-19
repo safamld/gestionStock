@@ -1,0 +1,75 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestion de Stock - Administration{% endblock %}</title>
+    
+    <!-- CSS Grappelli -->
+    <link rel="stylesheet" href="{% static 'grappelli/stylesheets/mueller/grid/output.css' %}">
+    <link rel="stylesheet" href="{% static 'grappelli/stylesheets/screen.css' %}">
+    <link rel="stylesheet" href="{% static 'grappelli/jquery/ui/jquery-ui.min.css' %}">
+    
+    <!-- Notre CSS personnalisé -->
+    <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
+    
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+    </style>
+    
+    {% block extrahead %}{% endblock %}
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+    <div id="container">
+        {% block header %}
+        <div id="header">
+            <div id="branding">
+                <h1><a href="{% url 'admin:index' %}">
+                    <i class="fas fa-warehouse"></i> Gestion de Stock Admin
+                </a></h1>
+            </div>
+            {% block usertools %}
+            <div id="user-tools">
+                {% if user.is_active and user.is_staff %}
+                    <span class="hello">Bienvenue, <strong>{{ user.get_full_name|default:user.username }}</strong>!</span> / 
+                    <a href="{% url 'admin:logout' %}">Déconnexion</a>
+                {% else %}
+                    <a href="{% url 'admin:login' %}">Connexion</a>
+                {% endif %}
+            </div>
+            {% endblock %}
+        </div>
+        {% endblock %}
+        
+        {% block messages %}
+        {% if messages %}
+        <ul class="messagelist">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endblock %}
+        
+        <div id="content" class="{% block content_class %}{% endblock %}">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <!-- JS Grappelli -->
+    <script src="{% static 'grappelli/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'grappelli/jquery/ui/jquery-ui.min.js' %}"></script>
+    <script src="{% static 'grappelli/jquery/jquery-migrate-3.0.1.min.js' %}"></script>
+    <script src="{% static 'grappelli/js/grappelli.min.js' %}"></script>
+    
+    {% block extrajs %}{% endblock %}
+</body>
+</html>

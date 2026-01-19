@@ -2,7 +2,8 @@
 Vues pour la gestion de stock.
 
 Ce module contient toutes les Class-Based Views pour le CRUD complet
-des produits, commandes et factures.
+des produits, commandes et factures, ainsi que les vues d'authentification
+et de dashboard avec routage basé sur les rôles.
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -11,14 +12,135 @@ from django.views.generic.base import View, TemplateView
 from django.urls import reverse_lazy
 from django.db.models import Sum, Count, Q
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User, Group
+from django.contrib.auth.password_validation import get_password_validators
 from django.http import JsonResponse
 from django.db import transaction
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.utils.crypto import get_random_string
 
 from .models import Produit, Commande, Facture, Historique
 
 
+# ==================== VUES D'AUTHENTIFICATION ====================
+
+def login_view(request):
+    """
+    Vue de connexion avec routage basé sur les rôles.
+    Tous les utilisateurs (admin, agents, fournisseurs) accèdent au dashboard gestion de stock.
+    """
+    if request.user.is_authenticated:
+        # L'utilisateur est déjà connecté
+        return redirect('stock:produit_list')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        remember_me = request.POST.get('remember_me')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            
+            # Paramètre "remember me"
+            if not remember_me:
+                request.session.set_expiry(0)
+            
+            # Tous les utilisateurs vont au dashboard gestion de stock
+            role = "Administrateur" if user.is_staff else "Agent"
+            messages.success(request, f'Bienvenue {user.get_full_name() or user.username} ({role})')
+            return redirect('stock:produit_list')
+        else:
+            messages.error(request, 'Identifiant ou mot de passe incorrect.')
+    
+    return render(request, 'login_blank.html')
+
+
+def logout_view(request):
+    """
+    Vue de déconnexion.
+    """
+    logout(request)
+    messages.success(request, 'Vous avez été déconnecté avec succès.')
+    return redirect('login')
+
+
+@login_required(login_url='login')
+def agent_dashboard(request):
+    """
+    Dashboard pour les agents de gestion de stock.
+    Affiche les statistiques et les actions rapides selon les permissions.
+    """
+    # Vérifier que l'utilisateur n'est pas admin
+    if request.user.is_staff:
+        return redirect('admin:index')
+    
+    # Récupérer les permissions de l'utilisateur
+    user_permissions = set()
+    for group in request.user.groups.all():
+        for permission in group.permissions.all():
+            user_permissions.add(permission.codename)
+    
+    # Déterminer le rôle de l'utilisateur
+    if 'Gestionnaire Stock' in [g.name for g in request.user.groups.all()]:
+        user_role = 'Gestionnaire Stock (Accès Complet)'
+    elif 'Responsable Commandes' in [g.name for g in request.user.groups.all()]:
+        user_role = 'Responsable Commandes'
+    elif 'Responsable Factures' in [g.name for g in request.user.groups.all()]:
+        user_role = 'Responsable Factures'
+    elif 'Lecteur Stock' in [g.name for g in request.user.groups.all()]:
+        user_role = 'Lecteur Stock (Lecture Seule)'
+    else:
+        user_role = 'Utilisateur'
+    
+    context = {
+        'user_role': user_role,
+        'permissions': user_permissions,
+    }
+    
+    return render(request, 'dashboard.html', context)
+
+
+# ==================== VUES POUR LES STATISTIQUES ====================
+
+@login_required(login_url='login')
+def statistiques_view(request):
+    """
+    Vue des statistiques générales du stock.
+    """
+    if request.user.is_staff:
+        return redirect('admin:index')
+    
+    context = {
+        'total_produits': Produit.objects.filter(is_deleted=False).count(),
+        'produits_critiques': Produit.objects.filter(is_deleted=False, quantite__lt=10).count(),
+        'total_commandes': Commande.objects.filter(is_deleted=False).count(),
+        'total_factures': Facture.objects.filter(is_deleted=False).count(),
+    }
+    return render(request, 'stock/statistiques.html', context)
+
+
+@login_required(login_url='login')
+def historique_view(request):
+    """
+    Vue de l'historique des actions.
+    """
+    if request.user.is_staff:
+        return redirect('admin:index')
+    
+    historique = Historique.objects.all().order_by('-date_action')[:50]
+    context = {'historique': historique}
+    return render(request, 'stock/historique.html', context)
+
+
 # ==================== VUES POUR LES PRODUITS ====================
 
+@method_decorator(login_required(login_url='login'), name='dispatch')
 class ProduitListView(ListView):
     """
     Liste tous les produits non supprimés, triés alphabétiquement.
@@ -33,6 +155,7 @@ class ProduitListView(ListView):
         return Produit.objects.filter(is_deleted=False).order_by('nom_prod')
 
 
+@method_decorator(login_required(login_url='login'), name='dispatch')
 class ProduitDetailView(DetailView):
     """
     Affiche les détails d'un produit spécifique.
@@ -118,6 +241,7 @@ class ProduitDeleteView(DeleteView):
 
 # ==================== VUES POUR LES COMMANDES ====================
 
+@method_decorator(login_required(login_url='login'), name='dispatch')
 class CommandeListView(ListView):
     """
     Liste toutes les commandes non supprimées.
@@ -470,3 +594,325 @@ class DashboardView(TemplateView):
         ).exclude(statut='payee').count()
         
         return context
+
+
+# ==================== GESTION DES AGENTS ====================
+
+class AdminOnlyMixin(UserPassesTestMixin):
+    """Mixin pour vérifier que l'utilisateur est admin"""
+    def test_func(self):
+        return self.request.user.is_staff
+    
+    def handle_no_permission(self):
+        messages.error(self.request, "Vous n'avez pas la permission d'accéder à cette page.")
+        return redirect('stock:produit_list')
+
+
+class AgentListView(AdminOnlyMixin, ListView):
+    """Affiche la liste de tous les agents (non-admin)"""
+    model = User
+    template_name = 'stock/agent_list.html'
+    context_object_name = 'agents'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        # Afficher tous les utilisateurs sauf les admins
+        return User.objects.filter(is_staff=False).order_by('username')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['groups'] = Group.objects.all()
+        
+        # Ajouter les statistiques pour chaque agent
+        # Chaque agent commence à 0 pour ses propres données
+        for agent in context['agents']:
+            from stock.models import Commande, Facture
+            
+            # Initialiser les compteurs à 0 pour chaque agent
+            agent.commandes_count = 0
+            agent.factures_count = 0
+            agent.factures_payees = 0
+            agent.factures_validees = 0
+        
+        return context
+
+
+class AgentCreateView(AdminOnlyMixin, CreateView):
+    """Crée un nouvel agent"""
+    model = User
+    template_name = 'stock/agent_form.html'
+    fields = ['username', 'first_name', 'last_name', 'email']
+    success_url = reverse_lazy('stock:agent_list')
+    
+    def get_context_data(self, **kwargs):
+        if not hasattr(self, 'object'):
+            self.object = None
+        context = super().get_context_data(**kwargs)
+        context['show_password_field'] = True
+        context['all_groups'] = Group.objects.all()
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        selected_groups = request.POST.getlist('groups')
+        
+        # Valider les mots de passe
+        if not password:
+            form.add_error(None, 'Le mot de passe est obligatoire')
+            return self.form_invalid(form)
+        
+        if password != password_confirm:
+            form.add_error(None, 'Les mots de passe ne correspondent pas')
+            return self.form_invalid(form)
+        
+        if len(password) < 6:
+            form.add_error(None, 'Le mot de passe doit contenir au moins 6 caractères')
+            return self.form_invalid(form)
+        
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.is_staff = False
+            user.set_password(password)
+            user.save()
+            
+            # Ajouter les groupes sélectionnés
+            if selected_groups:
+                for group_id in selected_groups:
+                    try:
+                        group = Group.objects.get(id=group_id)
+                        user.groups.add(group)
+                    except Group.DoesNotExist:
+                        pass
+            else:
+                # Si aucun groupe sélectionné, ajouter "Lecteur Stock" par défaut
+                try:
+                    lecteur_group = Group.objects.get(name='Lecteur Stock')
+                    user.groups.add(lecteur_group)
+                except Group.DoesNotExist:
+                    pass
+            
+            messages.success(
+                request,
+                f"Agent '{user.username}' créé avec succès!"
+            )
+            return redirect(self.success_url)
+        
+        return self.form_invalid(form)
+
+
+class AgentUpdateView(AdminOnlyMixin, UpdateView):
+    """Modifie un agent et ses permissions"""
+    model = User
+    template_name = 'stock/agent_edit.html'
+    fields = ['first_name', 'last_name', 'email']
+    success_url = reverse_lazy('stock:agent_list')
+    
+    def get_queryset(self):
+        # Permet seulement de modifier les non-admin
+        return User.objects.filter(is_staff=False)
+    
+    def form_valid(self, form):
+        """Valide le formulaire et traite les groupes et mot de passe"""
+        self.object = form.save()
+        
+        # Récupérer les groupes sélectionnés
+        selected_groups = self.request.POST.getlist('groups')
+        
+        # Mettre à jour les groupes
+        self.object.groups.clear()
+        for group_id in selected_groups:
+            try:
+                group = Group.objects.get(id=group_id)
+                self.object.groups.add(group)
+            except Group.DoesNotExist:
+                pass
+        
+        # Réinitialiser le mot de passe si demandé
+        if self.request.POST.get('reset_password'):
+            new_password = get_random_string(length=8, allowed_chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+            self.object.set_password(new_password)
+            self.object.save()
+            messages.warning(
+                self.request,
+                f"Mot de passe réinitialisé pour '{self.object.username}': {new_password}"
+            )
+        
+        messages.success(self.request, f"Agent '{self.object.username}' mis à jour avec succès!")
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['all_groups'] = Group.objects.all()
+        if self.object:
+            context['user_groups'] = self.object.groups.all()
+        return context
+
+
+
+
+class AgentDeleteView(AdminOnlyMixin, DeleteView):
+    """Supprime un agent"""
+    model = User
+    template_name = 'stock/agent_confirm_delete.html'
+    success_url = reverse_lazy('stock:agent_list')
+    
+    def get_queryset(self):
+        # Permet seulement de supprimer les non-admin
+        return User.objects.filter(is_staff=False)
+    
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        messages.success(request, f"Agent '{self.object.username}' supprimé avec succès!")
+        return super().delete(request, *args, **kwargs)
+
+
+class AgentReportView(AdminOnlyMixin, TemplateView):
+    """Affiche le rapport avec graphiques des agents"""
+    template_name = 'stock/agent_report.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['agents'] = User.objects.filter(is_staff=False).order_by('username')
+        context['groups'] = Group.objects.all()
+        return context
+
+
+@login_required
+def agent_graphs_data(request, pk):
+    """Retourne les données JSON pour les graphiques d'un agent"""
+    from django.http import JsonResponse
+    from stock.models import Commande, Facture
+    
+    # Vérifier que l'utilisateur est admin
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    try:
+        agent = User.objects.get(pk=pk, is_staff=False)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'Agent not found'}, status=404)
+    
+    # Données globales (on compte toutes les commandes/factures pour cette demo)
+    commandes = Commande.objects.filter(is_deleted=False)
+    factures = Facture.objects.filter(is_deleted=False)
+    
+    # Compter par statut de facture
+    factures_stats = {
+        'brouillon': factures.filter(statut='brouillon').count(),
+        'validee': factures.filter(statut='validee').count(),
+        'payee': factures.filter(statut='payee').count(),
+        'annulee': factures.filter(statut='annulee').count(),
+    }
+    
+    # Montants totaux par statut - avec gestion d'erreur
+    try:
+        factures_montants = {
+            'brouillon': float(factures.filter(statut='brouillon').aggregate(Sum('montant_total'))['montant_total__sum'] or 0),
+            'validee': float(factures.filter(statut='validee').aggregate(Sum('montant_total'))['montant_total__sum'] or 0),
+            'payee': float(factures.filter(statut='payee').aggregate(Sum('montant_total'))['montant_total__sum'] or 0),
+            'annulee': float(factures.filter(statut='annulee').aggregate(Sum('montant_total'))['montant_total__sum'] or 0),
+        }
+    except (TypeError, ValueError):
+        factures_montants = {
+            'brouillon': 0.0,
+            'validee': 0.0,
+            'payee': 0.0,
+            'annulee': 0.0,
+        }
+    
+    data = {
+        'agent_username': agent.username,
+        'agent_full_name': agent.get_full_name() or agent.username,
+        'commandes_total': commandes.count(),
+        'factures': {
+            'total': factures.count(),
+            'stats': factures_stats,
+            'montants': factures_montants,
+        },
+        'chart_data': {
+            'factures_by_status': {
+                'labels': ['Brouillon', 'Validée', 'Payée', 'Annulée'],
+                'data': [
+                    factures_stats['brouillon'],
+                    factures_stats['validee'],
+                    factures_stats['payee'],
+                    factures_stats['annulee'],
+                ],
+                'backgroundColor': ['#FCD34D', '#A78BFA', '#34D399', '#EF4444'],
+            },
+            'montants_by_status': {
+                'labels': ['Brouillon', 'Validée', 'Payée', 'Annulée'],
+                'data': [
+                    factures_montants['brouillon'],
+                    factures_montants['validee'],
+                    factures_montants['payee'],
+                    factures_montants['annulee'],
+                ],
+                'backgroundColor': ['#FCD34D', '#A78BFA', '#34D399', '#EF4444'],
+            },
+        }
+    }
+    
+    return JsonResponse(data)
+    
+    try:
+        agent = User.objects.get(pk=pk, is_staff=False)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'Agent not found'}, status=404)
+    
+    # Données globales (on compte toutes les commandes/factures pour cette demo)
+    commandes = Commande.objects.filter(is_deleted=False)
+    factures = Facture.objects.filter(is_deleted=False)
+    
+    # Compter par statut de facture
+    factures_stats = {
+        'brouillon': factures.filter(statut='brouillon').count(),
+        'validee': factures.filter(statut='validee').count(),
+        'payee': factures.filter(statut='payee').count(),
+        'annulee': factures.filter(statut='annulee').count(),
+    }
+    
+    # Montants totaux par statut
+    factures_montants = {
+        'brouillon': sum(f.montant_total for f in factures.filter(statut='brouillon')),
+        'validee': sum(f.montant_total for f in factures.filter(statut='validee')),
+        'payee': sum(f.montant_total for f in factures.filter(statut='payee')),
+        'annulee': sum(f.montant_total for f in factures.filter(statut='annulee')),
+    }
+    
+    data = {
+        'agent_username': agent.username,
+        'agent_full_name': agent.get_full_name() or agent.username,
+        'commandes_total': commandes.count(),
+        'factures': {
+            'total': factures.count(),
+            'stats': factures_stats,
+            'montants': factures_montants,
+        },
+        'chart_data': {
+            'factures_by_status': {
+                'labels': ['Brouillon', 'Validée', 'Payée', 'Annulée'],
+                'data': [
+                    factures_stats['brouillon'],
+                    factures_stats['validee'],
+                    factures_stats['payee'],
+                    factures_stats['annulee'],
+                ],
+                'backgroundColor': ['#FCD34D', '#A78BFA', '#34D399', '#EF4444'],
+            },
+            'montants_by_status': {
+                'labels': ['Brouillon', 'Validée', 'Payée', 'Annulée'],
+                'data': [
+                    factures_montants['brouillon'],
+                    factures_montants['validee'],
+                    factures_montants['payee'],
+                    factures_montants['annulee'],
+                ],
+                'backgroundColor': ['#FCD34D', '#A78BFA', '#34D399', '#EF4444'],
+            },
+        }
+    }
+    
+    return JsonResponse(data)

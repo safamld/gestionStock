@@ -1,0 +1,84 @@
+{% extends "stock/base.html" %}
+
+{% block title %}Supprimer Agent - Gestion de Stock{% endblock %}
+
+{% block header %}Confirmer la Suppression{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow p-8">
+        <!-- Alerte de danger -->
+        <div class="bg-red-50 border-l-4 border-red-600 p-6 mb-8">
+            <div class="flex">
+                <i class="fas fa-exclamation-triangle text-red-600 text-2xl mr-4"></i>
+                <div>
+                    <h3 class="text-lg font-bold text-red-800 mb-2">Attention: Action Irréversible</h3>
+                    <p class="text-red-700 text-sm">
+                        Êtes-vous sûr de vouloir supprimer cet agent ? Cette action ne peut pas être annulée.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Agent à supprimer -->
+        <div class="bg-gray-50 border border-gray-300 rounded-lg p-6 mb-8">
+            <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-red-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-lg font-bold text-gray-800">{{ object.username }}</p>
+                    <p class="text-sm text-gray-600">{{ object.get_full_name }}</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-600">Email:</p>
+                    <p class="font-semibold text-gray-800">{{ object.email|default:"Non défini" }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-600">Date Création:</p>
+                    <p class="font-semibold text-gray-800">{{ object.date_joined|date:"d/m/Y H:i" }}</p>
+                </div>
+                <div class="col-span-2">
+                    <p class="text-gray-600">Rôles Assignés:</p>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        {% for group in object.groups.all %}
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                                {{ group.name }}
+                            </span>
+                        {% empty %}
+                            <span class="text-gray-400">Aucun rôle assigné</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations supplémentaires -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-600 p-4 mb-8">
+            <p class="text-sm text-yellow-800">
+                <strong>Note:</strong> Après la suppression, cet agent ne pourra plus se connecter à l'application. 
+                Ses données historiques seront conservées dans la base de données.
+            </p>
+        </div>
+
+        <!-- Formulaire de suppression -->
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <div class="flex space-x-4">
+                <button type="submit" class="flex-1 px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition flex items-center justify-center space-x-2">
+                    <i class="fas fa-trash"></i>
+                    <span>Oui, Supprimer cet Agent</span>
+                </button>
+                <a href="{% url 'stock:agent_list' %}" class="flex-1 px-6 py-3 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition flex items-center justify-center space-x-2">
+                    <i class="fas fa-times"></i>
+                    <span>Non, Annuler</span>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

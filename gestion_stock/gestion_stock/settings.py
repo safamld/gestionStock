@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     # Admin moderne et responsive
-    'grappelli',
+    # 'grappelli',  # À installer: pip install django-grappelli
     
     'django.contrib.admin',
     'django.contrib.auth',
@@ -59,7 +59,10 @@ ROOT_URLCONF = 'gestion_stock.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            # Templates personnalisés de l'admin
+            BASE_DIR / 'stock' / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -120,6 +123,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Media files (User uploads)
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # ==================== CONFIGURATION EMAIL ====================
 

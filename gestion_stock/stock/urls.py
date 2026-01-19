@@ -49,8 +49,19 @@ urlpatterns = [
     # ==================== ROUTES POUR L'HISTORIQUE ====================
     
     path('historique/', views.HistoriqueListView.as_view(), name='historique_list'),
+    path('historique-view/', views.historique_view, name='historique'),
     
     # ==================== ROUTES POUR LES STATISTIQUES ====================
     
-    path('statistiques/', views.StatistiquesView.as_view(), name='statistiques'),
+    path('statistiques/', views.StatistiquesView.as_view(), name='statistiques_list'),
+    path('statistiques-view/', views.statistiques_view, name='statistiques'),
+    
+    # ==================== ROUTES POUR LA GESTION DES AGENTS (ADMIN) ====================
+    
+    path('agents/', views.AgentListView.as_view(), name='agent_list'),
+    path('agents/rapport/', views.AgentReportView.as_view(), name='agent_report'),
+    path('agents/nouveau/', views.AgentCreateView.as_view(), name='agent_create'),
+    path('agents/<int:pk>/modifier/', views.AgentUpdateView.as_view(), name='agent_edit'),
+    path('agents/<int:pk>/supprimer/', views.AgentDeleteView.as_view(), name='agent_delete'),
+    path('agents/<int:pk>/graphiques/', views.agent_graphs_data, name='agent_graphs_data'),
 ]
