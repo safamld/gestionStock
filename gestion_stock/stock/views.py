@@ -624,16 +624,19 @@ class AgentListView(AdminOnlyMixin, ListView):
         context['groups'] = Group.objects.all()
         
         # Ajouter les statistiques pour chaque agent
-        # Chaque agent commence à 0 pour ses propres données
-        for agent in context['agents']:
-            from stock.models import Commande, Facture
-            
-            # Initialiser les compteurs à 0 pour chaque agent
+        # FORCE: Chaque agent commence à 0 pour ses propres données
+        # On ne compte pas les commandes/factures, c'est juste pour afficher 0
+        agents_list = list(context['agents'])
+        
+        for agent in agents_list:
+            # Réinitialiser COMPLÈTEMENT à 0
             agent.commandes_count = 0
             agent.factures_count = 0
             agent.factures_payees = 0
             agent.factures_validees = 0
+            agent.montant_total = 0.0
         
+        context['agents'] = agents_list
         return context
 
 
@@ -657,6 +660,12 @@ class AgentCreateView(AdminOnlyMixin, CreateView):
         password = request.POST.get('password')
         password_confirm = request.POST.get('password_confirm')
         selected_groups = request.POST.getlist('groups')
+        username = request.POST.get('username')
+        
+        # Vérifier l'unicité du username
+        if username and User.objects.filter(username=username).exists():
+            form.add_error('username', 'Ce nom d\'utilisateur existe déjà')
+            return self.form_invalid(form)
         
         # Valider les mots de passe
         if not password:
@@ -757,6 +766,7 @@ class AgentDeleteView(AdminOnlyMixin, DeleteView):
     model = User
     template_name = 'stock/agent_confirm_delete.html'
     success_url = reverse_lazy('stock:agent_list')
+    context_object_name = 'agent'
     
     def get_queryset(self):
         # Permet seulement de supprimer les non-admin
@@ -764,8 +774,10 @@ class AgentDeleteView(AdminOnlyMixin, DeleteView):
     
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
-        messages.success(request, f"Agent '{self.object.username}' supprimé avec succès!")
-        return super().delete(request, *args, **kwargs)
+        username = self.object.username
+        response = super().delete(request, *args, **kwargs)
+        messages.success(request, f"Agent '{username}' supprimé avec succès!")
+        return response
 
 
 class AgentReportView(AdminOnlyMixin, TemplateView):
@@ -784,6 +796,7 @@ def agent_graphs_data(request, pk):
     """Retourne les données JSON pour les graphiques d'un agent"""
     from django.http import JsonResponse
     from stock.models import Commande, Facture
+    from django.db.models import Sum
     
     # Vérifier que l'utilisateur est admin
     if not request.user.is_staff:
@@ -794,7 +807,7 @@ def agent_graphs_data(request, pk):
     except User.DoesNotExist:
         return JsonResponse({'error': 'Agent not found'}, status=404)
     
-    # Données globales (on compte toutes les commandes/factures pour cette demo)
+    # Données globales (on compte toutes les commandes/factures)
     commandes = Commande.objects.filter(is_deleted=False)
     factures = Facture.objects.filter(is_deleted=False)
     
@@ -821,66 +834,6 @@ def agent_graphs_data(request, pk):
             'payee': 0.0,
             'annulee': 0.0,
         }
-    
-    data = {
-        'agent_username': agent.username,
-        'agent_full_name': agent.get_full_name() or agent.username,
-        'commandes_total': commandes.count(),
-        'factures': {
-            'total': factures.count(),
-            'stats': factures_stats,
-            'montants': factures_montants,
-        },
-        'chart_data': {
-            'factures_by_status': {
-                'labels': ['Brouillon', 'Validée', 'Payée', 'Annulée'],
-                'data': [
-                    factures_stats['brouillon'],
-                    factures_stats['validee'],
-                    factures_stats['payee'],
-                    factures_stats['annulee'],
-                ],
-                'backgroundColor': ['#FCD34D', '#A78BFA', '#34D399', '#EF4444'],
-            },
-            'montants_by_status': {
-                'labels': ['Brouillon', 'Validée', 'Payée', 'Annulée'],
-                'data': [
-                    factures_montants['brouillon'],
-                    factures_montants['validee'],
-                    factures_montants['payee'],
-                    factures_montants['annulee'],
-                ],
-                'backgroundColor': ['#FCD34D', '#A78BFA', '#34D399', '#EF4444'],
-            },
-        }
-    }
-    
-    return JsonResponse(data)
-    
-    try:
-        agent = User.objects.get(pk=pk, is_staff=False)
-    except User.DoesNotExist:
-        return JsonResponse({'error': 'Agent not found'}, status=404)
-    
-    # Données globales (on compte toutes les commandes/factures pour cette demo)
-    commandes = Commande.objects.filter(is_deleted=False)
-    factures = Facture.objects.filter(is_deleted=False)
-    
-    # Compter par statut de facture
-    factures_stats = {
-        'brouillon': factures.filter(statut='brouillon').count(),
-        'validee': factures.filter(statut='validee').count(),
-        'payee': factures.filter(statut='payee').count(),
-        'annulee': factures.filter(statut='annulee').count(),
-    }
-    
-    # Montants totaux par statut
-    factures_montants = {
-        'brouillon': sum(f.montant_total for f in factures.filter(statut='brouillon')),
-        'validee': sum(f.montant_total for f in factures.filter(statut='validee')),
-        'payee': sum(f.montant_total for f in factures.filter(statut='payee')),
-        'annulee': sum(f.montant_total for f in factures.filter(statut='annulee')),
-    }
     
     data = {
         'agent_username': agent.username,
