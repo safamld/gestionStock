@@ -29,7 +29,7 @@ admin.site.index_title = "Bienvenue dans l'administration"
 
 # Personnalisation CSS du site
 admin.site.enable_nav_sidebar = True
-from .models import Produit, Commande, Facture, Historique, Fournisseur, ProduitFournisseur, Notification
+from .models import Produit, Commande, Facture, Historique, Fournisseur, ProduitFournisseur, Notification, MontantAgent
 
 
 # ==================== FILTRES PERSONNALISES ====================
@@ -211,13 +211,13 @@ class ProduitAdmin(admin.ModelAdmin):
     Configuration de l'administration des produits.
     Version 2.0 : Inlines, optimisation, affichages avancés.
     """
-    list_display = ('code_prod', 'nom_prod', 'photo_preview', 'stock_progress_bar', 'prix_unit_badge', 'total_valeur_stock', 'statut_produit')
-    list_filter = (NiveauStockFilter, StockCritiqueFilter, PriceRangeFilter, DateRangeFilter, 'is_deleted')
+    list_display = ('code_prod', 'nom_prod', 'photo_preview', 'stock_progress_bar', 'prix_unit_badge', 'total_valeur_stock', 'fournisseur_badge', 'statut_produit')
+    list_filter = (NiveauStockFilter, StockCritiqueFilter, PriceRangeFilter, DateRangeFilter, 'is_deleted', 'fournisseur')
     search_fields = ('code_prod', 'nom_prod', 'description')
     readonly_fields = ('code_prod', 'date_creation', 'total_valeur_stock', 'photo_preview_large', 'stock_alert')
     fieldsets = (
         ('Informations Générales', {
-            'fields': ('code_prod', 'nom_prod', 'description'),
+            'fields': ('code_prod', 'nom_prod', 'description', 'fournisseur'),
             'classes': ('wide',)
         }),
         ('Photo du Produit', {
@@ -238,7 +238,7 @@ class ProduitAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Optimisation des requêtes avec select_related et prefetch_related."""
         queryset = super().get_queryset(request)
-        return queryset.prefetch_related('commandes', 'fournisseurs')
+        return queryset.select_related('fournisseur').prefetch_related('commandes', 'fournisseurs')
     
     def photo_preview(self, obj):
         """Affiche une miniature de la photo."""
@@ -318,6 +318,13 @@ class ProduitAdmin(admin.ModelAdmin):
             return format_html('<span style="color: #dc2626; font-weight: 600;">🗑️ Supprimé</span>')
         return format_html('<span style="color: #16a34a; font-weight: 600;">✅ Actif</span>')
     statut_produit.short_description = 'Statut'
+    
+    def fournisseur_badge(self, obj):
+        """Affiche le fournisseur du produit."""
+        if obj.fournisseur:
+            return format_html(f'<strong style="color: #0891b2;">{obj.fournisseur.nom_fournisseur}</strong>')
+        return format_html('<span style="color: #999;">Non attribué</span>')
+    fournisseur_badge.short_description = '🏭 Fournisseur'
 
 
 @admin.register(Commande)
@@ -326,13 +333,13 @@ class CommandeAdmin(admin.ModelAdmin):
     Configuration de l'administration des commandes.
     Version 2.0 : Optimisation requêtes, filtres avancés.
     """
-    list_display = ('code_cmd', 'code_prod', 'quantite_cmd_badge', 'montant_badge', 'date_commande', 'statut_cmd')
-    list_filter = (DateRangeFilter, 'is_deleted', 'code_prod')
-    search_fields = ('code_prod__nom_prod', 'code_cmd')
+    list_display = ('code_cmd', 'code_prod', 'quantite_cmd_badge', 'montant_badge', 'agent_utilisateur', 'date_commande', 'statut_cmd')
+    list_filter = (DateRangeFilter, 'is_deleted', 'code_prod', 'agent_utilisateur')
+    search_fields = ('code_prod__nom_prod', 'code_cmd', 'agent_utilisateur__username')
     readonly_fields = ('code_cmd', 'date_commande', 'montant_commande_display')
     fieldsets = (
         ('Informations Générales', {
-            'fields': ('code_cmd', 'code_prod', 'quantite_cmd')
+            'fields': ('code_cmd', 'code_prod', 'quantite_cmd', 'agent_utilisateur')
         }),
         ('Montant', {
             'fields': ('montant_commande_display',),
@@ -349,7 +356,7 @@ class CommandeAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Optimisation des requêtes avec select_related."""
         queryset = super().get_queryset(request)
-        return queryset.select_related('code_prod')
+        return queryset.select_related('code_prod', 'agent_utilisateur')
     
     def quantite_cmd_badge(self, obj):
         """Affiche la quantité avec couleur."""
@@ -388,13 +395,13 @@ class FactureAdmin(admin.ModelAdmin):
     Configuration de l'administration des factures.
     Version 2.0 : Optimisation requêtes, nouveaux filtres.
     """
-    list_display = ('code_facture', 'commande', 'montant_badge', 'statut_badge', 'paiement_badge', 'date_facture')
-    list_filter = (StatutPaiementFilter, DateRangeFilter, 'statut', 'date_facture')
-    search_fields = ('code_facture', 'commande__code_cmd')
+    list_display = ('code_facture', 'commande', 'agent_utilisateur', 'montant_badge', 'statut_badge', 'paiement_badge', 'date_facture')
+    list_filter = (StatutPaiementFilter, DateRangeFilter, 'statut', 'date_facture', 'agent_utilisateur')
+    search_fields = ('code_facture', 'commande__code_cmd', 'agent_utilisateur__username')
     readonly_fields = ('code_facture', 'date_facture', 'date_modification', 'montant_restant')
     fieldsets = (
         ('Informations Générales', {
-            'fields': ('code_facture', 'commande', 'montant_total')
+            'fields': ('code_facture', 'commande', 'agent_utilisateur', 'montant_total')
         }),
         ('Paiement', {
             'fields': ('montant_paye', 'montant_restant'),
@@ -411,7 +418,7 @@ class FactureAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Optimisation des requêtes avec select_related."""
         queryset = super().get_queryset(request)
-        return queryset.select_related('commande', 'commande__code_prod')
+        return queryset.select_related('commande', 'commande__code_prod', 'agent_utilisateur')
     
     def montant_badge(self, obj):
         """Affiche le montant avec couleur."""
@@ -484,7 +491,7 @@ class FournisseurAdmin(admin.ModelAdmin):
     Configuration de l'administration des fournisseurs.
     Version 2.0 : Optimisation, nouveaux filtres.
     """
-    list_display = ('code_fournisseur', 'nom_fournisseur', 'email', 'telephone', 'fournisseur_score', 'statut_badge')
+    list_display = ('code_fournisseur', 'nom_fournisseur', 'email', 'telephone', 'mot_de_passe_badge', 'fournisseur_score', 'statut_badge')
     list_filter = (FournisseurActifFilter, DateRangeFilter, 'date_creation')
     search_fields = ('code_fournisseur', 'nom_fournisseur', 'email', 'telephone')
     readonly_fields = ('code_fournisseur', 'date_creation', 'fournisseur_score')
@@ -495,11 +502,15 @@ class FournisseurAdmin(admin.ModelAdmin):
         ('Contact', {
             'fields': ('telephone', 'adresse')
         }),
+        ('Accès Dashboard', {
+            'fields': ('mot_de_passe',),
+            'description': 'Définissez un mot de passe pour que le fournisseur accède à son dashboard'
+        }),
         ('Performance', {
             'fields': ('fournisseur_score',)
         }),
         ('Statut', {
-            'fields': ('is_actif',)
+            'fields': ('statut',)
         }),
         ('Métadonnées', {
             'fields': ('date_creation',)
@@ -509,12 +520,24 @@ class FournisseurAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Optimisation des requêtes."""
         queryset = super().get_queryset(request)
-        return queryset.prefetch_related('produits')
+        return queryset.prefetch_related('produits_fournis')
+    
+    def mot_de_passe_badge(self, obj):
+        """Affiche l'état du mot de passe."""
+        if obj.mot_de_passe:
+            return format_html(
+                '<span style="background-color: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 4px; font-size: 12px;"><i class="fas fa-lock"></i> Configuré</span>'
+            )
+        else:
+            return format_html(
+                '<span style="background-color: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-size: 12px;"><i class="fas fa-lock-open"></i> Non configuré</span>'
+            )
+    mot_de_passe_badge.short_description = 'Mot de passe'
     
     def fournisseur_score(self, obj):
         """Affiche un score du fournisseur."""
         # Nombre de produits fournis
-        nb_produits = obj.produits.count()
+        nb_produits = obj.produits_fournis.count()
         
         if nb_produits >= 20:
             score = '⭐⭐⭐⭐⭐'
@@ -927,6 +950,29 @@ class GroupAdmin(admin.ModelAdmin):
         couleur = '#28a745' if count > 0 else '#dc3545'
         return format_html(f'<strong style="color: {couleur};">{count}</strong> permission(s)')
     nombre_permissions.short_description = '🔐 Permissions'
+
+
+# ==================== ADMIN POUR MONTANT AGENT ====================
+
+@admin.register(MontantAgent)
+class MontantAgentAdmin(admin.ModelAdmin):
+    """
+    Admin pour gérer les montants accumulés par agent.
+    """
+    list_display = ('agent_utilisateur', 'montant_total_formatted', 'date_mise_a_jour')
+    search_fields = ('agent_utilisateur__username', 'agent_utilisateur__first_name')
+    readonly_fields = ('agent_utilisateur', 'date_mise_a_jour')
+    list_filter = ('date_mise_a_jour',)
+    
+    def montant_total_formatted(self, obj):
+        """Affiche le montant avec formatage."""
+        if obj.montant_total >= 1000:
+            return format_html(f'<strong style="color: #dc2626;">{obj.montant_total:.2f}€</strong>')
+        elif obj.montant_total >= 500:
+            return format_html(f'<strong style="color: #f59e0b;">{obj.montant_total:.2f}€</strong>')
+        else:
+            return format_html(f'<strong style="color: #10b981;">{obj.montant_total:.2f}€</strong>')
+    montant_total_formatted.short_description = '💰 Montant Total'
 
 
 # ==================== CRÉATION DES GROUPES PAR DÉFAUT ====================

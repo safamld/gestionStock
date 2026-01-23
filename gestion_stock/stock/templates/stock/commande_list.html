@@ -4,6 +4,85 @@
 {% block header %}Commandes{% endblock %}
 
 {% block content %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #f0f4ff 0%, #fdf2f8 100%);
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    .agents-table {
+        width: 100%;
+        margin-bottom: 32px;
+    }
+
+    .agents-table th {
+        background: #f8fafc;
+        color: #1e293b;
+        font-weight: 700;
+        padding: 12px;
+        text-align: left;
+        border-bottom: 2px solid #e2e8f0;
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+
+    .agents-table td {
+        padding: 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .agents-table tr:hover {
+        background: #f8fafc;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .badge-primary {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .badge-success {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .badge-warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+</style>
+
 <div class="mb-6 flex justify-between items-center">
     <div>
         <p class="text-gray-600">
@@ -16,6 +95,55 @@
         <i class="fas fa-plus mr-2"></i>Nouvelle Commande
     </a>
 </div>
+
+<!-- Stats générales -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Commandes</div>
+        <div class="stat-value">{{ total_commandes }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Montant Total</div>
+        <div class="stat-value">{{ montant_total|floatformat:0 }}€</div>
+    </div>
+</div>
+
+<!-- Stats par agent -->
+{% if agents_stats %}
+<div class="card bg-white rounded-lg p-6 mb-6">
+    <h3 class="text-lg font-bold text-gray-800 mb-4">
+        <i class="fas fa-users mr-2"></i> Commandes par Agent
+    </h3>
+    <table class="agents-table">
+        <thead>
+            <tr>
+                <th>Agent</th>
+                <th style="text-align: center;">Commandes</th>
+                <th style="text-align: center;">Factures</th>
+                <th style="text-align: right;">Montant Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in agents_stats %}
+            <tr>
+                <td>
+                    <strong>{{ stat.agent.get_full_name|default:stat.agent.username }}</strong>
+                </td>
+                <td style="text-align: center;">
+                    <span class="badge badge-primary">{{ stat.commandes_count }}</span>
+                </td>
+                <td style="text-align: center;">
+                    <span class="badge badge-success">{{ stat.factures_count }}</span>
+                </td>
+                <td style="text-align: right; font-weight: bold; color: #667eea;">
+                    {{ stat.montant_total|floatformat:2 }}€
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
 
 {% if commandes %}
     <div class="card bg-white rounded-lg overflow-hidden">

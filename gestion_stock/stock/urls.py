@@ -11,7 +11,8 @@ app_name = 'stock'
 
 urlpatterns = [
     # Page d'accueil
-    path('', views.DashboardView.as_view(), name='dashboard'),
+    path('', views.home_view, name='home'),
+    path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
     
     # ==================== ROUTES POUR LES PRODUITS ====================
     
@@ -64,4 +65,29 @@ urlpatterns = [
     path('agents/<int:pk>/modifier/', views.AgentUpdateView.as_view(), name='agent_edit'),
     path('agents/<int:pk>/supprimer/', views.AgentDeleteView.as_view(), name='agent_delete'),
     path('agents/<int:pk>/graphiques/', views.agent_graphs_data, name='agent_graphs_data'),
+    
+    # ==================== ROUTES POUR AGENT DASHBOARD ====================
+    
+    path('agent/dashboard/', views.agent_dashboard_view, name='agent_dashboard'),
+    path('agent/commande/<int:produit_id>/', views.passer_commande_view, name='passer_commande'),
+    
+    # ==================== ROUTES POUR FOURNISSEUR DASHBOARD ====================
+    
+    path('fournisseur/login/', views.fournisseur_login_view, name='fournisseur_login'),
+    path('fournisseur/logout/', views.fournisseur_logout_view, name='fournisseur_logout'),
+    path('fournisseur/dashboard/', views.fournisseur_dashboard_view, name='fournisseur_dashboard'),
+    path('fournisseur/produit/ajouter/', views.ajouter_produit_fournisseur_view, name='ajouter_produit_fournisseur'),
+    path('fournisseur/produit/<int:produit_id>/modifier/', views.modifier_produit_fournisseur_view, name='modifier_produit_fournisseur'),
+    path('fournisseur/produit/<int:produit_id>/supprimer/', views.supprimer_produit_fournisseur_view, name='supprimer_produit_fournisseur'),
+    path('fournisseur/facture/<int:facture_id>/payee/', views.marquer_facture_payee_view, name='marquer_facture_payee'),
+    path('fournisseur/facture/<int:facture_id>/valider-paiement/', views.marquer_facture_payee_view, name='valider_paiement_facture'),
+    path('fournisseur/facture/<int:facture_id>/details/', views.detailler_facture_fournisseur_view, name='detailler_facture_fournisseur'),
+    path('fournisseur/commande/<int:commande_id>/marquer-payee/', views.marquer_commande_payee_view, name='marquer_commande_payee'),
+    
+    # ==================== ROUTES POUR LA GESTION DES FOURNISSEURS (ADMIN) ====================
+    
+    path('fournisseurs/', views.FournisseurListView.as_view(), name='fournisseur_list'),
+    path('fournisseurs/nouveau/', views.FournisseurCreateView.as_view(), name='fournisseur_create'),
+    path('fournisseurs/<str:pk>/modifier/', views.FournisseurUpdateView.as_view(), name='fournisseur_edit'),
+    path('fournisseurs/<str:pk>/supprimer/', views.FournisseurDeleteView.as_view(), name='fournisseur_delete'),
 ]

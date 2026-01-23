@@ -1,0 +1,173 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+
+{% block title %}Modifier Produit{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h2 class="mb-0" style="color: white;">
+                        <i class="fas fa-edit"></i> Modifier le Produit
+                    </h2>
+                </div>
+                <div class="card-body p-5">
+                    <!-- Informations du produit -->
+                    <div class="alert alert-info mb-4" style="background-color: #f0f9ff; border-left: 4px solid #0891b2;">
+                        <strong style="color: #0c4a6e;">{{ produit.nom_prod }}</strong> (Code: {{ produit.code_prod }})
+                    </div>
+
+                    <!-- Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Formulaire -->
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="form-group mb-4">
+                            <label for="nom_prod" class="form-label" style="color: #1e40af; font-weight: 600;">
+                                <i class="fas fa-tag"></i> Nom du Produit *
+                            </label>
+                            <input type="text" id="nom_prod" name="nom_prod" class="form-control" 
+                                   value="{{ produit.nom_prod }}" required 
+                                   style="border: 2px solid #1e40af; padding: 10px;">
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="description" class="form-label" style="color: #1e40af; font-weight: 600;">
+                                <i class="fas fa-align-left"></i> Description
+                            </label>
+                            <textarea id="description" name="description" class="form-control" rows="4"
+                                      style="border: 2px solid #1e40af; padding: 10px;">{{ produit.description }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-4">
+                                    <label for="prix_unit" class="form-label" style="color: #1e40af; font-weight: 600;">
+                                        <i class="fas fa-euro-sign"></i> Prix Unitaire (€) *
+                                    </label>
+                                    <input type="number" id="prix_unit" name="prix_unit" class="form-control" 
+                                           step="0.01" min="0" value="{{ produit.prix_unit }}" required 
+                                           style="border: 2px solid #1e40af; padding: 10px;">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-4">
+                                    <label for="quantite" class="form-label" style="color: #1e40af; font-weight: 600;">
+                                        <i class="fas fa-cubes"></i> Quantité en Stock
+                                    </label>
+                                    <input type="number" id="quantite" name="quantite" class="form-control" 
+                                           min="0" value="{{ produit.quantite }}" 
+                                           style="border: 2px solid #1e40af; padding: 10px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Photo actuelle -->
+                        {% if produit.photo %}
+                        <div class="form-group mb-4">
+                            <label class="form-label" style="color: #1e40af; font-weight: 600;">
+                                <i class="fas fa-image"></i> Photo Actuelle
+                            </label>
+                            <div class="mb-3">
+                                <img src="{{ produit.photo.url }}" alt="{{ produit.nom_prod }}" 
+                                     style="max-width: 300px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Nouvelle photo -->
+                        <div class="form-group mb-4">
+                            <label for="photo" class="form-label" style="color: #1e40af; font-weight: 600;">
+                                <i class="fas fa-image"></i> Changer la Photo
+                            </label>
+                            <input type="file" id="photo" name="photo" class="form-control" 
+                                   accept="image/*" style="border: 2px solid #1e40af; padding: 10px;">
+                            <small class="form-text text-muted mt-2">
+                                Formats acceptés: PNG, JPG, JPEG (max 5MB)
+                            </small>
+                        </div>
+
+                        <!-- Aperçu nouvelle photo -->
+                        <div id="photo-preview" class="mb-4" style="display: none;">
+                            <label class="form-label" style="color: #1e40af; font-weight: 600;">
+                                Aperçu de la nouvelle photo
+                            </label>
+                            <img id="preview-img" src="" alt="Aperçu" 
+                                 style="max-width: 300px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        </div>
+
+                        <!-- Statistiques actuelles -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="card" style="border-left: 4px solid #16a34a;">
+                                    <div class="card-body">
+                                        <small class="text-muted">Valeur Stock</small>
+                                        <h5 style="color: #16a34a;">{{ produit.total_valeur_stock|floatformat:2 }}€</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card" style="border-left: 4px solid #0891b2;">
+                                    <div class="card-body">
+                                        <small class="text-muted">Quantité</small>
+                                        <h5 style="color: #0891b2;">{{ produit.quantite }}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card" style="border-left: 4px solid #1e40af;">
+                                    <div class="card-body">
+                                        <small class="text-muted">Créé le</small>
+                                        <h5 style="color: #1e40af;">{{ produit.date_add|date:"d/m/Y" }}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Boutons -->
+                        <div class="d-flex gap-3 mt-5">
+                            <a href="{% url 'stock:fournisseur_dashboard' %}" class="btn btn-outline-secondary" style="flex: 1; padding: 10px;">
+                                <i class="fas fa-arrow-left"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary" style="flex: 1; padding: 10px; background-color: #1e40af; border-color: #1e40af;">
+                                <i class="fas fa-save"></i> Enregistrer les modifications
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const photoInput = document.getElementById('photo');
+    const photoPreview = document.getElementById('photo-preview');
+    const previewImg = document.getElementById('preview-img');
+
+    photoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                previewImg.src = event.target.result;
+                photoPreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+{% endblock %}

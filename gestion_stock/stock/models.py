@@ -8,6 +8,7 @@ et leur historique (soft delete avec is_deleted).
 from django.db import models
 from django.utils import timezone
 from django.db.models import Sum
+from django.contrib.auth.models import User
 
 
 class Produit(models.Model):
@@ -26,7 +27,7 @@ class Produit(models.Model):
     """
     
     code_prod = models.AutoField(primary_key=True)
-    nom_prod = models.CharField(max_length=100, unique=True)
+    nom_prod = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     quantite = models.IntegerField(default=0)
     prix_unit = models.FloatField()
@@ -39,10 +40,12 @@ class Produit(models.Model):
     )
     date_creation = models.DateTimeField(auto_now_add=True)
     is_deleted = models.BooleanField(default=False)  # Soft delete pour historique
+    fournisseur = models.ForeignKey('Fournisseur', on_delete=models.SET_NULL, null=True, blank=True, related_name='produits_fournis')
     
     class Meta:
         ordering = ['nom_prod']  # Affichage alphabétique
         verbose_name_plural = "Produits"
+        unique_together = ('fournisseur', 'nom_prod')  # Même nom possible pour différents fournisseurs
     
     def __str__(self):
         return f"{self.nom_prod} (Quantité: {self.quantite})"
@@ -74,13 +77,26 @@ class Commande(models.Model):
         code_cmd (int): Identifiant unique de la commande
         code_prod (FK): Référence au produit commandé
         quantite_cmd (int): Quantité commandée
+        agent_utilisateur (FK): Utilisateur qui a créé la commande
+        statut_paiement (str): État du paiement (en attente, payée)
+        paiement_confirme (bool): Si le fournisseur a confirmé le paiement
+        date_paiement (datetime): Date du paiement confirmé
         date_commande (datetime): Date de création de la commande
         is_deleted (bool): Marqueur pour soft delete (historique)
     """
     
+    STATUT_PAIEMENT_CHOICES = [
+        ('en_attente', 'En Attente de Paiement'),
+        ('payee', 'Payée'),
+    ]
+    
     code_cmd = models.AutoField(primary_key=True)
     code_prod = models.ForeignKey(Produit, on_delete=models.PROTECT, related_name='commandes')
     quantite_cmd = models.IntegerField(default=1)
+    agent_utilisateur = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='commandes')
+    statut_paiement = models.CharField(max_length=20, choices=STATUT_PAIEMENT_CHOICES, default='en_attente')
+    paiement_confirme = models.BooleanField(default=False, help_text="Confirmé par le fournisseur")
+    date_paiement = models.DateTimeField(null=True, blank=True, help_text="Date du paiement confirmé")
     date_commande = models.DateTimeField(auto_now_add=True)
     is_deleted = models.BooleanField(default=False)  # Soft delete pour historique
     
@@ -104,6 +120,14 @@ class Commande(models.Model):
         """Restaure une commande supprimée logiquement."""
         self.is_deleted = False
         self.save()
+    
+    def confirmer_paiement(self):
+        """Le fournisseur confirme que l'agent a payé."""
+        from django.utils import timezone
+        self.statut_paiement = 'payee'
+        self.paiement_confirme = True
+        self.date_paiement = timezone.now()
+        self.save()
 
 
 class Facture(models.Model):
@@ -114,6 +138,7 @@ class Facture(models.Model):
         code_facture (int): Identifiant unique de la facture
         commande (FK): Référence à la commande associée
         montant_total (float): Montant total de la facture
+        agent_utilisateur (FK): Agent qui a créé la commande
         date_facture (datetime): Date de création de la facture
         statut (str): État de la facture (Brouillon, Validée, Payée, Annulée)
         is_deleted (bool): Marqueur pour soft delete (historique)
@@ -127,8 +152,9 @@ class Facture(models.Model):
     ]
     
     code_facture = models.AutoField(primary_key=True)
-    commande = models.OneToOneField(Commande, on_delete=models.PROTECT, related_name='facture')
+    commande = models.OneToOneField(Commande, on_delete=models.SET_NULL, null=True, blank=True, related_name='facture')
     montant_total = models.FloatField()
+    agent_utilisateur = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='factures')
     date_facture = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='brouillon')
@@ -212,21 +238,30 @@ class Fournisseur(models.Model):
     Modèle représentant un fournisseur.
     
     Attributs:
-        code_fournisseur (int): Identifiant unique
+        user (FK): Utilisateur Django associé
+        code_fournisseur (str): Identifiant unique (texte)
         nom_fournisseur (str): Nom du fournisseur
         email (str): Email du fournisseur pour les notifications
         telephone (str): Numéro de téléphone
         adresse (str): Adresse du fournisseur
-        is_actif (bool): Indique si le fournisseur est actif
+        statut (str): Statut du fournisseur (actif/inactif)
+        mot_de_passe (str): Mot de passe pour accéder au dashboard
         date_creation (datetime): Date d'ajout du fournisseur
     """
     
-    code_fournisseur = models.AutoField(primary_key=True)
+    STATUT_CHOICES = [
+        ('actif', 'Actif'),
+        ('inactif', 'Inactif'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='fournisseur')
+    code_fournisseur = models.CharField(max_length=50, unique=True, primary_key=True)
     nom_fournisseur = models.CharField(max_length=100, unique=True)
     email = models.EmailField()
     telephone = models.CharField(max_length=20, blank=True, null=True)
     adresse = models.TextField(blank=True, null=True)
-    is_actif = models.BooleanField(default=True)
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='actif')
+    mot_de_passe = models.CharField(max_length=100, blank=True, null=True, help_text="Mot de passe pour l'accès au dashboard")
     date_creation = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -325,3 +360,33 @@ class Notification(models.Model):
             self.date_traitement = timezone.now()
             self.save()
 
+
+class MontantAgent(models.Model):
+    """
+    Modèle pour tracker le montant total accumulé par agent.
+    
+    Attributs:
+        agent_utilisateur (FK): L'agent (utilisateur Django)
+        montant_total (float): Montant cumulé de toutes ses commandes payées
+        date_mise_a_jour (datetime): Dernière mise à jour du montant
+    """
+    
+    agent_utilisateur = models.OneToOneField(User, on_delete=models.CASCADE, related_name='montant_commandes')
+    montant_total = models.FloatField(default=0.0)
+    date_mise_a_jour = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name_plural = "Montants Agents"
+    
+    def __str__(self):
+        return f"{self.agent_utilisateur.username} - {self.montant_total}€"
+    
+    def ajouter_montant(self, montant):
+        """Ajoute un montant au total de l'agent."""
+        self.montant_total += montant
+        self.save()
+    
+    def retirer_montant(self, montant):
+        """Retire un montant du total de l'agent."""
+        self.montant_total = max(0, self.montant_total - montant)
+        self.save()

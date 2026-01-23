@@ -46,10 +46,12 @@
                            class="block px-4 py-2 rounded-lg ml-2 {% if 'produit' in request.resolver_match.url_name %}bg-blue-600{% else %}hover:bg-blue-700{% endif %} transition">
                             <i class="fas fa-list mr-2"></i> Liste
                         </a>
+                        {% if user.is_staff %}
                         <a href="{% url 'stock:produit_create' %}" 
                            class="block px-4 py-2 rounded-lg ml-2 hover:bg-blue-700 transition">
                             <i class="fas fa-plus mr-2"></i> Ajouter
                         </a>
+                        {% endif %}
                     </div>
                     
                     <!-- Commandes -->
@@ -72,10 +74,12 @@
                            class="block px-4 py-2 rounded-lg ml-2 {% if 'facture' in request.resolver_match.url_name %}bg-blue-600{% else %}hover:bg-blue-700{% endif %} transition">
                             <i class="fas fa-file-invoice mr-2"></i> Liste
                         </a>
+                        {% if user.is_staff %}
                         <a href="{% url 'stock:facture_create' %}" 
                            class="block px-4 py-2 rounded-lg ml-2 hover:bg-blue-700 transition">
                             <i class="fas fa-plus mr-2"></i> Nouvelle
                         </a>
+                        {% endif %}
                     </div>
                     
                     <!-- Statistiques et Historique -->
@@ -99,7 +103,22 @@
                            class="block px-4 py-2 rounded-lg ml-2 {% if 'agent_list' in request.resolver_match.url_name %}bg-blue-600{% else %}hover:bg-blue-700{% endif %} transition">
                             <i class="fas fa-users mr-2"></i> Gestion des Agents
                         </a>
+                        <a href="{% url 'stock:fournisseur_list' %}" 
+                           class="block px-4 py-2 rounded-lg ml-2 {% if 'fournisseur_list' in request.resolver_match.url_name %}bg-blue-600{% else %}hover:bg-blue-700{% endif %} transition">
+                            <i class="fas fa-building mr-2"></i> Gestion des Fournisseurs
+                        </a>
                         {% endif %}
+                        
+                        <!-- Lien Dashboard Fournisseur (pour les fournisseurs) -->
+                        {% for group in user.groups.all %}
+                            {% if group.name == 'Fournisseur' %}
+                        <p class="text-xs font-semibold text-blue-200 uppercase mb-2 mt-3">Fournisseur</p>
+                        <a href="{% url 'stock:fournisseur_dashboard' %}" 
+                           class="block px-4 py-2 rounded-lg ml-2 {% if 'fournisseur_dashboard' in request.resolver_match.url_name %}bg-blue-600{% else %}hover:bg-blue-700{% endif %} transition">
+                            <i class="fas fa-chart-line mr-2"></i> Mon Dashboard
+                        </a>
+                            {% endif %}
+                        {% endfor %}
                     </div>
                 </nav>
             </div>

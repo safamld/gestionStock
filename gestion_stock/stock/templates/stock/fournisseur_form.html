@@ -1,0 +1,121 @@
+{% extends 'stock/base.html' %}
+
+{% block title %}Ajouter un Fournisseur{% endblock %}
+
+{% block header %}Ajouter un Fournisseur{% endblock %}
+
+{% block content %}
+<div class="w-full px-3 sm:px-6 py-4 sm:py-6">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-4 sm:p-6 md:p-8">
+        <form method="post" class="space-y-4 sm:space-y-6">
+            {% csrf_token %}
+            
+            <!-- Afficher les erreurs générales -->
+            {% if form.non_field_errors %}
+                <div class="bg-red-100 border-l-4 border-red-600 p-3 sm:p-4">
+                    {% for error in form.non_field_errors %}
+                        <p class="text-red-800 text-xs sm:text-sm">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Code Fournisseur et Nom en ligne sur desktop -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <!-- Code Fournisseur -->
+                <div>
+                    <label for="{{ form.code_fournisseur.id_for_label }}" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+                        <i class="fas fa-barcode text-blue-600 mr-2"></i>Code Fournisseur <span class="text-red-600">*</span>
+                    </label>
+                    <input type="text" name="code_fournisseur" id="id_code_fournisseur" required 
+                        class="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 text-sm sm:text-base {% if form.code_fournisseur.errors %}border-red-500{% endif %}"
+                        placeholder="Ex: FOURN001">
+                    {% if form.code_fournisseur.errors %}
+                        <p class="text-red-600 text-xs sm:text-sm mt-1">
+                            <i class="fas fa-exclamation-circle mr-1"></i>{{ form.code_fournisseur.errors.0 }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Nom Fournisseur -->
+                <div>
+                    <label for="{{ form.nom_fournisseur.id_for_label }}" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+                        <i class="fas fa-building text-blue-600 mr-2"></i>Nom du Fournisseur <span class="text-red-600">*</span>
+                    </label>
+                    <input type="text" name="nom_fournisseur" id="id_nom_fournisseur" required
+                        class="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 text-sm sm:text-base {% if form.nom_fournisseur.errors %}border-red-500{% endif %}"
+                        placeholder="Ex: ACME Inc.">
+                    {% if form.nom_fournisseur.errors %}
+                        <p class="text-red-600 text-xs sm:text-sm mt-1">
+                            <i class="fas fa-exclamation-circle mr-1"></i>{{ form.nom_fournisseur.errors.0 }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Email et Téléphone en ligne sur desktop -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <!-- Email -->
+                <div>
+                    <label for="{{ form.email.id_for_label }}" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+                        <i class="fas fa-envelope text-blue-600 mr-2"></i>Email <span class="text-red-600">*</span>
+                    </label>
+                    <input type="email" name="email" id="id_email" required
+                        class="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 text-sm sm:text-base {% if form.email.errors %}border-red-500{% endif %}"
+                        placeholder="contact@fournisseur.com">
+                    {% if form.email.errors %}
+                        <p class="text-red-600 text-xs sm:text-sm mt-1">
+                            <i class="fas fa-exclamation-circle mr-1"></i>{{ form.email.errors.0 }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Téléphone -->
+                <div>
+                    <label for="{{ form.telephone.id_for_label }}" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+                        <i class="fas fa-phone text-blue-600 mr-2"></i>Téléphone
+                    </label>
+                    <input type="tel" name="telephone" id="id_telephone"
+                        class="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 text-sm sm:text-base"
+                        placeholder="+33 1 23 45 67 89">
+                </div>
+            </div>
+
+            <!-- Mot de Passe -->
+            <div>
+                <label for="{{ form.mot_de_passe.id_for_label }}" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+                    <i class="fas fa-lock text-blue-600 mr-2"></i>Mot de Passe <span class="text-red-600">*</span>
+                </label>
+                <input type="password" name="mot_de_passe" id="id_mot_de_passe" required
+                    class="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 text-sm sm:text-base {% if form.mot_de_passe.errors %}border-red-500{% endif %}"
+                    placeholder="Entrez un mot de passe sécurisé"
+                    value="{{ object.mot_de_passe|default:'' }}">
+                {% if form.mot_de_passe.errors %}
+                    <p class="text-red-600 text-xs sm:text-sm mt-1">
+                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.mot_de_passe.errors.0 }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- Info importante -->
+            <div class="bg-blue-50 border-l-4 border-blue-600 p-3 sm:p-4">
+                <p class="text-xs sm:text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Note:</strong> Les champs marqués d'une <span class="font-bold text-red-600">*</span> sont obligatoires
+                </p>
+            </div>
+
+            <!-- Boutons -->
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 pt-2 sm:pt-4">
+                <button type="submit" class="w-full sm:flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition flex items-center justify-center space-x-2 text-sm sm:text-base">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Créer le Fournisseur</span>
+                </button>
+                <a href="{% url 'stock:fournisseur_list' %}" class="w-full sm:flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition flex items-center justify-center space-x-2 text-sm sm:text-base">
+                    <i class="fas fa-times-circle"></i>
+                    <span>Annuler</span>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,104 +1,367 @@
 {% extends "stock/base.html" %}
+{% load static %}
 
 {% block title %}Liste des Produits - Gestion de Stock{% endblock %}
 {% block header %}Produits{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex justify-between items-center">
-    <div>
-        <p class="text-gray-600">
-            <i class="fas fa-boxes mr-2"></i>
-            <strong>{{ paginator.count }}</strong> produit(s) trouvé(s)
-        </p>
+<style>
+    .product-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+        margin-top: 24px;
+    }
+
+    .product-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #f0f0f0;
+    }
+
+    .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    }
+
+    .product-image {
+        width: 100%;
+        height: 240px;
+        background: linear-gradient(135deg, #f0f4ff 0%, #fdf2f8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-image.no-image {
+        font-size: 48px;
+        color: #cbd5e1;
+    }
+
+    .product-info {
+        padding: 18px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .product-code {
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    .product-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 8px;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+
+    .product-description {
+        font-size: 13px;
+        color: #64748b;
+        margin-bottom: 12px;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .product-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .product-price {
+        font-size: 18px;
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    .product-quantity {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .quantity-high {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .quantity-low {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .quantity-none {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .product-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: auto;
+    }
+
+    .btn-action {
+        flex: 1;
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .btn-commander {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        flex: 2;
+    }
+
+    .btn-commander:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-commander:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-view {
+        background: #f3f4f6;
+        color: #374151;
+        flex: 1;
+    }
+
+    .btn-view:hover {
+        background: #e5e7eb;
+        color: #374151;
+        text-decoration: none;
+    }
+
+    .btn-edit {
+        background: #f0fdf4;
+        color: #166534;
+        flex: 1;
+    }
+
+    .btn-edit:hover {
+        background: #dcfce7;
+        text-decoration: none;
+    }
+
+    .btn-delete {
+        background: #fef2f2;
+        color: #991b1b;
+        flex: 1;
+    }
+
+    .btn-delete:hover {
+        background: #fee2e2;
+        text-decoration: none;
+    }
+
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .stats {
+        display: flex;
+        gap: 16px;
+    }
+
+    .stat-item {
+        padding: 12px 18px;
+        background: linear-gradient(135deg, #f0f4ff 0%, #fdf2f8 100%);
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .stat-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    @media (max-width: 768px) {
+        .product-gallery {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .header-section {
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .stats {
+            flex-wrap: wrap;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="header-section">
+    <div class="stats">
+        <div class="stat-item">
+            <div class="stat-label">Produits</div>
+            <div class="stat-value">{{ paginator.count }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">En stock</div>
+            <div class="stat-value">{{ total_stock }}</div>
+        </div>
     </div>
-    <a href="{% url 'stock:produit_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition font-semibold">
-        <i class="fas fa-plus mr-2"></i>Ajouter Produit
+    
+    {% if user.is_staff %}
+    <a href="{% url 'stock:produit_create' %}" class="btn-commander" style="width: auto;">
+        <i class="fas fa-plus"></i> Ajouter Produit
     </a>
+    {% elif is_fournisseur %}
+    <a href="{% url 'stock:ajouter_produit_fournisseur' %}" class="btn-commander" style="width: auto;">
+        <i class="fas fa-plus"></i> Ajouter Produit
+    </a>
+    {% endif %}
 </div>
 
 {% if produits %}
-    <div class="card bg-white rounded-lg overflow-hidden">
-        <table class="w-full">
-            <thead class="bg-gray-100 border-b-2 border-gray-300">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Code</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Nom</th>
-                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Quantité</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Prix</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Valeur Stock</th>
-                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for produit in produits %}
-                    <tr class="border-b hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 text-sm font-mono text-gray-600">#{{ produit.code_prod }}</td>
-                        <td class="px-6 py-4 text-sm">
-                            <a href="{% url 'stock:produit_detail' produit.pk %}" class="text-blue-600 hover:text-blue-800 font-semibold">
-                                {{ produit.nom_prod }}
+    <div class="product-gallery">
+        {% for produit in produits %}
+            <div class="product-card">
+                <!-- Image -->
+                <div class="product-image {% if not produit.photo %}no-image{% endif %}">
+                    {% if produit.photo %}
+                        <img src="{{ produit.photo.url }}" alt="{{ produit.nom_prod }}" loading="lazy">
+                    {% else %}
+                        <i class="fas fa-image"></i>
+                    {% endif %}
+                </div>
+
+                <!-- Info -->
+                <div class="product-info">
+                    <div class="product-code">#{{ produit.code_prod }}</div>
+                    <div class="product-name">{{ produit.nom_prod }}</div>
+                    
+                    {% if produit.description %}
+                    <div class="product-description">{{ produit.description }}</div>
+                    {% endif %}
+
+                    <!-- Meta -->
+                    <div class="product-meta">
+                        <div class="product-price">{{ produit.prix_unit|floatformat:2 }}€</div>
+                        <span class="product-quantity 
+                            {% if produit.quantite > 10 %}quantity-high
+                            {% elif produit.quantite > 0 %}quantity-low
+                            {% else %}quantity-none{% endif %}">
+                            {{ produit.quantite }} en stock
+                        </span>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="product-actions">
+                        {% if not user.is_staff and not is_fournisseur %}
+                            <!-- Agent: Bouton Commander -->
+                            <a href="{% url 'stock:produit_detail' produit.pk %}" class="btn-action btn-commander">
+                                <i class="fas fa-shopping-cart"></i> Commander
                             </a>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-center">
-                            {% if produit.quantite > 10 %}
-                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
-                                    {{ produit.quantite }}
-                                </span>
-                            {% elif produit.quantite > 0 %}
-                                <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">
-                                    {{ produit.quantite }}
-                                </span>
-                            {% else %}
-                                <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold">
-                                    Rupture
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 text-sm text-right font-semibold text-gray-800">{{ produit.prix_unit|floatformat:2 }}€</td>
-                        <td class="px-6 py-4 text-sm text-right font-bold text-blue-600">{{ produit.total_valeur_stock|floatformat:2 }}€</td>
-                        <td class="px-6 py-4 text-sm text-center">
-                            <div class="flex justify-center space-x-2">
-                                <a href="{% url 'stock:produit_detail' produit.pk %}" class="text-blue-600 hover:text-blue-800" title="Voir">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{% url 'stock:produit_update' produit.pk %}" class="text-green-600 hover:text-green-800" title="Modifier">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="{% url 'stock:produit_delete' produit.pk %}" class="text-red-600 hover:text-red-800" title="Supprimer">
-                                    <i class="fas fa-trash"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        {% else %}
+                            <!-- Admin/Fournisseur: Bouton Voir -->
+                            <a href="{% url 'stock:produit_detail' produit.pk %}" class="btn-action btn-view">
+                                <i class="fas fa-eye"></i> Voir
+                            </a>
+                        {% endif %}
+
+                        {% if user.is_staff %}
+                            <a href="{% url 'stock:produit_update' produit.pk %}" class="btn-action btn-edit" title="Modifier">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'stock:produit_delete' produit.pk %}" class="btn-action btn-delete" title="Supprimer">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
     </div>
     
     <!-- Pagination -->
     {% if is_paginated %}
-        <div class="mt-6 flex justify-center items-center space-x-2">
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 32px;">
             {% if page_obj.has_previous %}
-                <a href="?page=1" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">« Première</a>
-                <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">‹ Précédente</a>
+                <a href="?page=1" class="btn-action btn-view" style="padding: 8px 12px;">« Première</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn-action btn-view" style="padding: 8px 12px;">‹ Précédente</a>
             {% endif %}
             
-            <span class="text-gray-600 px-4 py-2">
+            <span style="color: #64748b; padding: 0 16px; font-weight: 600;">
                 Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
             </span>
             
             {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">Suivante ›</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">Dernière »</a>
+                <a href="?page={{ page_obj.next_page_number }}" class="btn-action btn-view" style="padding: 8px 12px;">Suivante ›</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn-action btn-view" style="padding: 8px 12px;">Dernière »</a>
             {% endif %}
         </div>
     {% endif %}
 {% else %}
-    <div class="card bg-white rounded-lg p-12 text-center">
-        <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-        <p class="text-gray-500 text-lg mb-6">Aucun produit trouvé</p>
-        <a href="{% url 'stock:produit_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition inline-block font-semibold">
-            <i class="fas fa-plus mr-2"></i>Créer le premier produit
+    <div style="background: white; border-radius: 12px; padding: 48px 24px; text-align: center; border: 2px dashed #e5e7eb;">
+        <i class="fas fa-inbox" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px; display: block;"></i>
+        <p style="color: #64748b; font-size: 16px; margin-bottom: 24px;">Aucun produit trouvé</p>
+        {% if user.is_staff %}
+        <a href="{% url 'stock:produit_create' %}" class="btn-commander" style="display: inline-block; width: auto;">
+            <i class="fas fa-plus"></i> Créer le premier produit
         </a>
+        {% endif %}
     </div>
 {% endif %}
 {% endblock %}

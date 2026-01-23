@@ -1,0 +1,261 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Agent{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4" style="color: #1e40af;">
+                <i class="fas fa-user-tie"></i> Dashboard Agent
+            </h1>
+            <p class="text-muted">Bienvenue, {{ user.first_name|default:user.username }}!</p>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-primary text-uppercase mb-1" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px;">
+                        Produits Disponibles
+                    </div>
+                    <div class="h3 mb-0" style="color: #1e40af;">{{ produits|length }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-success text-uppercase mb-1" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px;">
+                        Mes Commandes
+                    </div>
+                    <div class="h3 mb-0" style="color: #16a34a;">{{ nombre_commandes }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-info text-uppercase mb-1" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px;">
+                        Mes Factures
+                    </div>
+                    <div class="h3 mb-0" style="color: #0891b2;">{{ nombre_factures }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-warning text-uppercase mb-1" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px;">
+                        Montant Total (€)
+                    </div>
+                    <div class="h3 mb-0" style="color: #dc2626;">{{ montant_agent.montant_total|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des Produits -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3" style="background-color: #f3f4f6;">
+                    <h6 class="m-0 font-weight-bold" style="color: #1e40af;">
+                        <i class="fas fa-box"></i> Catalogue de Produits
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if produits %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead style="background-color: #f0f9ff;">
+                                    <tr>
+                                        <th>Produit</th>
+                                        <th>Fournisseur</th>
+                                        <th>Description</th>
+                                        <th>Quantité Disponible</th>
+                                        <th>Prix Unitaire</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for produit in produits %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ produit.nom_prod }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if produit.fournisseur %}
+                                                <span class="badge" style="background-color: #1e40af; color: white;">
+                                                    <i class="fas fa-industry mr-1"></i>{{ produit.fournisseur.nom_fournisseur }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">Non spécifié</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ produit.description|truncatewords:10 }}</td>
+                                        <td>
+                                            {% if produit.quantite > 0 %}
+                                                <span class="badge badge-success" style="background-color: #16a34a;">
+                                                    {{ produit.quantite }} u
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-danger" style="background-color: #dc2626;">
+                                                    Rupture
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong style="color: #1e40af;">{{ produit.prix_unit|floatformat:2 }}€</strong>
+                                        </td>
+                                        <td>
+                                            {% if produit.quantite > 0 %}
+                                                <a href="{% url 'stock:passer_commande' produit.code_prod %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-shopping-cart"></i> Commander
+                                                </a>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-secondary" disabled>
+                                                    Indisponible
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info" style="border-left: 4px solid #0891b2;">
+                            <i class="fas fa-info-circle"></i> Aucun produit disponible pour le moment.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mes Commandes -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3" style="background-color: #f3f4f6;">
+                    <h6 class="m-0 font-weight-bold" style="color: #1e40af;">
+                        <i class="fas fa-list"></i> Mes Commandes Récentes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if commandes %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead style="background-color: #f0f9ff;">
+                                    <tr>
+                                        <th>N° Commande</th>
+                                        <th>Produit</th>
+                                        <th>Fournisseur</th>
+                                        <th>Quantité</th>
+                                        <th>Montant</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for commande in commandes %}
+                                    <tr>
+                                        <td><strong>#{{ commande.code_cmd }}</strong></td>
+                                        <td>{{ commande.code_prod.nom_prod }}</td>
+                                        <td>
+                                            {% if commande.code_prod.fournisseur %}
+                                                <span class="badge" style="background-color: #1e40af; color: white;">
+                                                    {{ commande.code_prod.fournisseur.nom_fournisseur }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">Non spécifié</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ commande.quantite_cmd }} u</td>
+                                        <td><strong style="color: #1e40af;">{{ commande.montant_commande|floatformat:2 }}€</strong></td>
+                                        <td>{{ commande.date_commande|date:"d/m/Y H:i" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Vous n'avez pas encore passé de commandes.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mes Factures -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3" style="background-color: #f3f4f6;">
+                    <h6 class="m-0 font-weight-bold" style="color: #1e40af;">
+                        <i class="fas fa-file-invoice"></i> Mes Factures
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if factures %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead style="background-color: #f0f9ff;">
+                                    <tr>
+                                        <th>N° Facture</th>
+                                        <th>Commande</th>
+                                        <th>Fournisseur</th>
+                                        <th>Montant</th>
+                                        <th>Statut</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for facture in factures %}
+                                    <tr>
+                                        <td><strong>#{{ facture.code_facture }}</strong></td>
+                                        <td>#{{ facture.commande.code_cmd }}</td>
+                                        <td>
+                                            {% if facture.commande.code_prod.fournisseur %}
+                                                <span class="badge" style="background-color: #1e40af; color: white;">
+                                                    {{ facture.commande.code_prod.fournisseur.nom_fournisseur }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">Non spécifié</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><strong style="color: #dc2626;">{{ facture.montant_total|floatformat:2 }}€</strong></td>
+                                        <td>
+                                            {% if facture.statut == 'brouillon' %}
+                                                <span class="badge" style="background-color: #9ca3af;">📝 Brouillon</span>
+                                            {% elif facture.statut == 'validee' %}
+                                                <span class="badge" style="background-color: #3b82f6;">✅ Validée</span>
+                                            {% elif facture.statut == 'payee' %}
+                                                <span class="badge" style="background-color: #10b981;">💰 Payée</span>
+                                            {% elif facture.statut == 'annulee' %}
+                                                <span class="badge" style="background-color: #ef4444;">❌ Annulée</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ facture.date_facture|date:"d/m/Y H:i" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Vous n'avez pas encore de factures.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

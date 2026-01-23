@@ -1,0 +1,1060 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Fournisseur{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #5b21b6;
+        --primary-light: #7c3aed;
+        --primary-dark: #4c1d95;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #0891b2;
+        --dark-text: #1f2937;
+        --light-text: #6b7280;
+        --light-bg: #f9fafb;
+        --border-color: #e5e7eb;
+    }
+
+    /* Statistiques Améliorées */
+    .stat-card {
+        border-radius: 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: -50%;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.25);
+    }
+
+    .stat-card.success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .stat-card.warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .stat-card.danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+    .stat-card.info { background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 800;
+        margin: 15px 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        opacity: 0.95;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        position: relative;
+        z-index: 1;
+        font-weight: 600;
+    }
+
+    .stat-card small {
+        font-size: 0.8rem;
+        opacity: 0.85;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Titres Sections */
+    .section-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--primary);
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .section-title i {
+        font-size: 1.8rem;
+        color: var(--primary-light);
+    }
+
+    /* Tableau Amélioré */
+    .table-wrapper {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        transition: box-shadow 0.3s ease;
+    }
+
+    .table-wrapper:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .table-responsive {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead {
+        background: linear-gradient(135deg, #f0f9ff 0%, #eff6ff 100%);
+        border-bottom: 2px solid var(--primary);
+    }
+
+    .table thead th {
+        color: var(--primary);
+        font-weight: 700;
+        padding: 18px;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: #fafafa;
+    }
+
+    .table tbody td {
+        padding: 16px 18px;
+        vertical-align: middle;
+        color: var(--dark-text);
+    }
+
+    /* Boutons d'Actions Améliorés */
+    .btn-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .btn-action {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+
+    .btn-modify {
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(123, 58, 237, 0.2);
+    }
+
+    .btn-modify:hover {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        box-shadow: 0 4px 12px rgba(123, 58, 237, 0.4);
+        transform: scale(1.08);
+    }
+
+    .btn-delete {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-delete:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        transform: scale(1.08);
+    }
+
+    /* Badges Améliorés */
+    .badge {
+        padding: 8px 14px !important;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+    }
+
+    /* Boutons Principaux */
+    .btn-primary-custom {
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+        border: none;
+        color: white;
+        padding: 12px 28px;
+        border-radius: 10px;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(123, 58, 237, 0.25);
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary-custom:hover {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        box-shadow: 0 6px 16px rgba(123, 58, 237, 0.35);
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    .btn-secondary-custom {
+        background: white;
+        border: 2px solid var(--primary-light);
+        color: var(--primary-light);
+        padding: 10px 26px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-secondary-custom:hover {
+        background: var(--primary-light);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(123, 58, 237, 0.25);
+    }
+
+    /* Alerte Améliorée */
+    .alert-custom {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-left: 4px solid var(--success);
+        border-radius: 10px;
+        padding: 20px;
+        color: var(--dark-text);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+    }
+
+    /* Animation d'Entrée */
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .stat-card, .table-wrapper, .alert-custom {
+        animation: slideUp 0.5s ease-out;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.15s; }
+    .stat-card:nth-child(3) { animation-delay: 0.2s; }
+    .stat-card:nth-child(4) { animation-delay: 0.25s; }
+
+    /* ==================== RESPONSIVE MOBILE FIRST ==================== */
+
+    /* Extra Small (< 576px) */
+    @media (max-width: 575px) {
+        .container-fluid { padding-left: 10px !important; padding-right: 10px !important; }
+        
+        /* Header */
+        .container-fluid > .row:nth-child(1) > .col-12 > div {
+            padding: 20px 15px !important;
+            border-radius: 12px !important;
+            margin: 0 -10px !important;
+            width: calc(100% + 20px) !important;
+        }
+
+        .container-fluid > .row:nth-child(1) h1 {
+            font-size: 1.3rem !important;
+            margin-bottom: 8px !important;
+        }
+
+        .container-fluid > .row:nth-child(1) p {
+            font-size: 0.75rem !important;
+            margin: 2px 0 !important;
+        }
+
+        /* Stat Cards */
+        .stat-card { 
+            padding: 15px !important;
+            margin-bottom: 10px !important;
+        }
+        .stat-number { font-size: 1.4rem; }
+        .stat-label { font-size: 0.6rem; letter-spacing: 0; }
+        .stat-card small { font-size: 0.55rem; }
+        .stat-card i { font-size: 0.9rem !important; }
+
+        /* Section Titles */
+        .section-title { 
+            font-size: 0.95rem; 
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            gap: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .section-title i { font-size: 1rem; }
+
+        /* Tables - Important! */
+        .table-wrapper { 
+            margin-bottom: 15px;
+            padding: 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            display: block;
+            width: 100%;
+        }
+
+        .table { 
+            font-size: 0.65rem;
+            width: 100%;
+            min-width: 500px;
+            display: table;
+        }
+
+        .table thead {
+            display: table;
+            width: 100%;
+        }
+
+        .table thead th { 
+            font-size: 0.55rem; 
+            padding: 8px 4px !important;
+            font-weight: 600;
+            white-space: nowrap;
+            word-break: break-word;
+        }
+
+        .table tbody {
+            display: table;
+            width: 100%;
+        }
+
+        .table tbody tr { 
+            display: table-row;
+        }
+
+        .table tbody td { 
+            font-size: 0.6rem;
+            padding: 6px 4px !important;
+            word-break: break-word;
+            white-space: normal;
+        }
+
+        .table tbody tr:hover { background-color: transparent; }
+
+        /* Badges */
+        .badge { 
+            padding: 3px 6px !important;
+            font-size: 0.55rem !important;
+            display: inline-block;
+        }
+
+        /* Buttons */
+        .btn-actions { gap: 2px; }
+        .btn-action { 
+            width: 26px; 
+            height: 26px; 
+            font-size: 0.5rem;
+            padding: 2px;
+        }
+
+        .btn-primary-custom, .btn-secondary-custom { 
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Small (576px - 767px) */
+    @media (min-width: 576px) and (max-width: 767px) {
+        .container-fluid { padding-left: 12px !important; padding-right: 12px !important; }
+        
+        .container-fluid > .row:nth-child(1) > .col-12 > div {
+            padding: 25px 18px !important;
+        }
+
+        .container-fluid > .row:nth-child(1) h1 {
+            font-size: 1.5rem !important;
+        }
+
+        .container-fluid > .row:nth-child(1) p {
+            font-size: 0.8rem !important;
+        }
+
+        /* Stat Cards */
+        .stat-card { 
+            padding: 18px !important;
+            margin-bottom: 12px !important;
+        }
+        .stat-number { font-size: 1.6rem; }
+        .stat-label { font-size: 0.65rem; }
+        .stat-card small { font-size: 0.6rem; }
+
+        /* Section Titles */
+        .section-title { 
+            font-size: 1.1rem; 
+            margin-bottom: 15px;
+        }
+        .section-title i { font-size: 1.2rem; }
+
+        /* Tables */
+        .table { font-size: 0.75rem; }
+        .table thead th { 
+            font-size: 0.65rem; 
+            padding: 10px 6px !important;
+        }
+        .table tbody td { 
+            font-size: 0.7rem;
+            padding: 8px 6px !important;
+        }
+
+        .badge { 
+            padding: 4px 8px !important;
+            font-size: 0.65rem !important;
+        }
+
+        .btn-action { 
+            width: 30px; 
+            height: 30px; 
+            font-size: 0.65rem;
+        }
+
+        .btn-primary-custom, .btn-secondary-custom { 
+            padding: 8px 16px;
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Medium (768px - 991px) */
+    @media (min-width: 768px) and (max-width: 991px) {
+        .stat-number { font-size: 1.8rem; }
+        .stat-card { padding: 20px; }
+        .section-title { font-size: 1.3rem; }
+        .table thead th { font-size: 0.75rem; }
+        .table tbody td { font-size: 0.8rem; }
+        .btn-primary-custom, .btn-secondary-custom { padding: 9px 18px; font-size: 0.85rem; }
+    }
+
+    /* Large (992px - 1199px) */
+    @media (min-width: 992px) and (max-width: 1199px) {
+        .stat-number { font-size: 2rem; }
+        .stat-card { padding: 25px; }
+        .section-title { font-size: 1.5rem; }
+    }
+
+    /* Extra Large (1200px+) */
+    @media (min-width: 1200px) {
+        .container-fluid { max-width: 1400px; margin: 0 auto; }
+    }
+
+    /* Remove hover effects on touch devices */
+    @media (hover: none) {
+        .stat-card:hover { transform: none; }
+        .btn-modify:hover, .btn-delete:hover { transform: none; }
+        .table tbody tr:hover { background-color: transparent; }
+    }
+</style>
+
+<div class="container-fluid py-2 py-md-4">
+    <!-- Header avec bienvenue amélioré -->
+    <div class="row mb-4 mb-md-5">
+        <div class="col-12">
+            <div style="background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%); color: white; padding: 50px; border-radius: 20px; box-shadow: 0 10px 30px rgba(91, 33, 182, 0.2); position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -50px; right: -50px; width: 300px; height: 300px; background: rgba(255, 255, 255, 0.05); border-radius: 50%;"></div>
+                <div style="position: relative; z-index: 1;">
+                    <h1 style="margin: 0 0 15px 0; font-size: 2.8rem; font-weight: 800;">
+                        <i class="fas fa-industry" style="margin-right: 12px;"></i>Dashboard Fournisseur
+                    </h1>
+                    <p style="margin: 0 0 8px 0; font-size: 1.15rem; font-weight: 600;">
+                        Bienvenue, <strong>{{ fournisseur.nom_fournisseur }}</strong>
+                    </p>
+                    <p style="opacity: 0.9; font-size: 0.95rem; display: flex; flex-wrap: wrap; gap: 15px; margin: 0;">
+                        <span><i class="fas fa-envelope" style="margin-right: 6px;"></i> {{ fournisseur.email }}</span>
+                        {% if fournisseur.telephone %}
+                        <span><i class="fas fa-phone" style="margin-right: 6px;"></i> {{ fournisseur.telephone }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques principales -->
+    <div class="row mb-4 mb-md-5">
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
+            <div class="stat-card">
+                <i class="fas fa-box" style="font-size: 1.3rem; opacity: 0.8;"></i>
+                <div class="stat-label">Mes Produits</div>
+                <div class="stat-number">{{ total_produits }}</div>
+                <small>Produits actifs</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
+            <div class="stat-card info">
+                <i class="fas fa-shopping-cart" style="font-size: 1.3rem; opacity: 0.8;"></i>
+                <div class="stat-label">Commandes Reçues</div>
+                <div class="stat-number">{{ total_commandes }}</div>
+                <small>Depuis le début</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
+            <div class="stat-card success">
+                <i class="fas fa-check-circle" style="font-size: 1.3rem; opacity: 0.8;"></i>
+                <div class="stat-label">Montant Payé</div>
+                <div class="stat-number">{{ montant_payees|floatformat:2 }}€</div>
+                <small>Factures validées</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
+            <div class="stat-card warning">
+                <i class="fas fa-hourglass-half" style="font-size: 1.3rem; opacity: 0.8;"></i>
+                <div class="stat-label">En Attente</div>
+                <div class="stat-number">{{ montant_non_payees|floatformat:2 }}€</div>
+                <small>Montant dû</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="row mb-4 mb-md-5">
+        <div class="col-12">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-start;">
+                <a href="{% url 'stock:ajouter_produit_fournisseur' %}" class="btn-primary-custom">
+                    <i class="fas fa-plus-circle"></i> <span class="d-none d-sm-inline">Ajouter Produit</span><span class="d-sm-none">Ajouter</span>
+                </a>
+                <a href="#produits" class="btn-secondary-custom">
+                    <i class="fas fa-list"></i> <span class="d-none d-sm-inline">Voir Produits</span>
+                </a>
+                <a href="#commandes" class="btn-secondary-custom">
+                    <i class="fas fa-shopping-cart"></i> <span class="d-none d-sm-inline">Commandes</span>
+                </a>
+                <a href="#factures" class="btn-secondary-custom">
+                    <i class="fas fa-file-invoice"></i> <span class="d-none d-sm-inline">Factures</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Mes Produits -->
+    <div class="row mb-4 mb-md-5" id="produits">
+        <div class="col-12">
+            <h3 class="section-title">
+                <i class="fas fa-cube"></i> Mes Produits
+            </h3>
+            {% if produits %}
+                <div class="table-wrapper">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Produit</th>
+                                    <th>Description</th>
+                                    <th>Quantité</th>
+                                    <th>Prix Unitaire</th>
+                                    <th>Valeur Stock</th>
+                                    <th style="text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produit in produits %}
+                                <tr>
+                                    <td>
+                                        <strong style="color: var(--primary);">{{ produit.nom_prod }}</strong>
+                                    </td>
+                                    <td>
+                                        <small style="color: var(--light-text);">{{ produit.description|truncatewords:15 }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background-color: {% if produit.quantite > 10 %}var(--success){% elif produit.quantite > 0 %}var(--warning){% else %}var(--danger){% endif %}; color: white;">
+                                            {{ produit.quantite }} u
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong style="color: var(--primary);">{{ produit.prix_unit|floatformat:2 }}€</strong>
+                                    </td>
+                                    <td>
+                                        <strong style="color: var(--success);">{{ produit.total_valeur_stock|floatformat:2 }}€</strong>
+                                    </td>
+                                    <td>
+                                        <div class="btn-actions">
+                                            <a href="{% url 'stock:modifier_produit_fournisseur' produit.code_prod %}" class="btn-action btn-modify" title="Modifier" data-toggle="tooltip">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'stock:supprimer_produit_fournisseur' produit.code_prod %}" class="btn-action btn-delete" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce produit?')" title="Supprimer" data-toggle="tooltip">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert-custom">
+                    <i class="fas fa-box-open" style="font-size: 1.2rem; margin-right: 8px;"></i>
+                    <strong>Pas encore de produits</strong><br>
+                    Vous n'avez pas encore ajouté de produits. 
+                    <a href="{% url 'stock:ajouter_produit_fournisseur' %}" style="color: var(--success); text-decoration: none; font-weight: 600;">Ajouter maintenant →</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Section Commandes -->
+    <div class="row mb-4 mb-md-5" id="commandes">
+        <div class="col-12">
+            <h3 class="section-title">
+                <i class="fas fa-clipboard-list"></i> Commandes des Agents
+            </h3>
+            {% if commandes %}
+                <!-- Vue Desktop/Tablet (Tableau) -->
+                <div class="table-wrapper d-none d-lg-block">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>N° Commande</th>
+                                    <th>Agent</th>
+                                    <th>Produit</th>
+                                    <th>Quantité</th>
+                                    <th>Montant</th>
+                                    <th>Statut Paiement</th>
+                                    <th>Date</th>
+                                    <th style="text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for commande in commandes %}
+                            <tr>
+                                <td>
+                                    <strong style="color: var(--primary);">#{{ commande.code_cmd }}</strong>
+                                </td>
+                                <td>
+                                    <div style="color: var(--primary); font-weight: 600;">
+                                        <i class="fas fa-user"></i> 
+                                        {% if commande.agent_utilisateur %}
+                                            {{ commande.agent_utilisateur.first_name }} {{ commande.agent_utilisateur.last_name }}
+                                        {% else %}
+                                            <span style="color: var(--danger);">Non assigné</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if commande.agent_utilisateur %}
+                                    <small style="color: var(--light-text);">{{ commande.agent_utilisateur.email }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ commande.code_prod.nom_prod }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge" style="background-color: var(--info); color: white;">
+                                        {{ commande.quantite_cmd }} u
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong style="color: var(--success);">{{ commande.montant_commande|floatformat:2 }}€</strong>
+                                </td>
+                                <td>
+                                    {% if commande.paiement_confirme %}
+                                        <span class="badge" style="background-color: var(--success); color: white;">
+                                            <i class="fas fa-check-circle"></i> Payée
+                                        </span>
+                                        <br>
+                                        <small style="color: var(--success); font-weight: 500; display: block; margin-top: 4px;">
+                                            {{ commande.date_paiement|date:"d/m/Y H:i" }}
+                                        </small>
+                                    {% else %}
+                                        <span class="badge" style="background-color: var(--warning); color: white;">
+                                            <i class="fas fa-clock"></i> En Attente
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small style="color: var(--light-text);">{{ commande.date_commande|date:"d/m/Y H:i" }}</small>
+                                </td>
+                                <td style="text-align: center;">
+                                    <div class="btn-actions">
+                                        {% if not commande.paiement_confirme %}
+                                            <form method="POST" action="{% url 'stock:marquer_commande_payee' commande.code_cmd %}" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn-action btn-modify" title="Marquer comme payée" onclick="return confirm('Confirmer le paiement de cette commande?')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Vue Mobile (Cartes) -->
+                <div class="d-lg-none">
+                    {% for commande in commandes %}
+                    <div style="background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                        <!-- En-tête -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid var(--light-bg);">
+                            <div>
+                                <div style="font-size: 0.75rem; color: var(--light-text); font-weight: 600; text-transform: uppercase;">Commande</div>
+                                <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary);">#{{ commande.code_cmd }}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                {% if commande.paiement_confirme %}
+                                    <span class="badge" style="background: linear-gradient(135deg, var(--success) 0%, #047857 100%); color: white; display: inline-block;">
+                                        <i class="fas fa-check-circle"></i> Payée
+                                    </span>
+                                {% else %}
+                                    <span class="badge" style="background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); color: white; display: inline-block;">
+                                        <i class="fas fa-clock"></i> Attente
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Détails -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; font-size: 0.85rem;">
+                            <div>
+                                <div style="color: var(--light-text); font-weight: 600; margin-bottom: 4px;">Agent</div>
+                                <div style="font-weight: 600; color: var(--dark-text);">
+                                    {% if commande.agent_utilisateur %}
+                                        {{ commande.agent_utilisateur.first_name }}
+                                    {% else %}
+                                        Non assigné
+                                    {% endif %}
+                                </div>
+                                {% if commande.agent_utilisateur %}
+                                <small style="color: var(--light-text);">{{ commande.agent_utilisateur.email }}</small>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div style="color: var(--light-text); font-weight: 600; margin-bottom: 4px;">Produit</div>
+                                <div style="font-weight: 600; color: var(--dark-text);">{{ commande.code_prod.nom_prod }}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--light-text); font-weight: 600; margin-bottom: 4px;">Quantité</div>
+                                <span class="badge" style="background-color: var(--info); color: white;">{{ commande.quantite_cmd }} u</span>
+                            </div>
+                            <div>
+                                <div style="color: var(--light-text); font-weight: 600; margin-bottom: 4px;">Montant</div>
+                                <div style="font-weight: 700; color: var(--success);">{{ commande.montant_commande|floatformat:2 }}€</div>
+                            </div>
+                            <div style="grid-column: 1 / -1;">
+                                <div style="color: var(--light-text); font-weight: 600; margin-bottom: 4px;">Date</div>
+                                <small style="color: var(--dark-text);">{{ commande.date_commande|date:"d/m/Y H:i" }}</small>
+                            </div>
+                        </div>
+
+                        <!-- Action -->
+                        {% if not commande.paiement_confirme %}
+                        <form method="POST" action="{% url 'stock:marquer_commande_payee' commande.code_cmd %}" style="display: block;">
+                            {% csrf_token %}
+                            <button type="submit" style="width: 100%; background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem;" onclick="return confirm('Confirmer le paiement de cette commande?')">
+                                <i class="fas fa-check-circle"></i> Confirmer le paiement
+                            </button>
+                        </form>
+                        {% else %}
+                        <div style="text-align: center; padding: 12px; background: var(--light-bg); border-radius: 8px; color: var(--success); font-weight: 600; font-size: 0.9rem;">
+                            <i class="fas fa-check-double"></i> Paiement confirmé le {{ commande.date_paiement|date:"d/m/Y H:i" }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for commande in commandes %}
+                            <tr>
+                                <td>
+                                    <strong style="color: var(--primary);">#{{ commande.code_cmd }}</strong>
+                                </td>
+                                <td>
+                                    <div style="color: var(--primary); font-weight: 600;">
+                                        <i class="fas fa-user"></i> 
+                                        {% if commande.agent_utilisateur %}
+                                            {{ commande.agent_utilisateur.first_name }} {{ commande.agent_utilisateur.last_name }}
+                                        {% else %}
+                                            <span style="color: var(--danger);">Non assigné</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if commande.agent_utilisateur %}
+                                    <small style="color: var(--light-text);">{{ commande.agent_utilisateur.email }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ commande.code_prod.nom_prod }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge" style="background-color: var(--info); color: white;">
+                                        {{ commande.quantite_cmd }} u
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong style="color: var(--success);">{{ commande.montant_commande|floatformat:2 }}€</strong>
+                                </td>
+                                <td>
+                                    {% if commande.paiement_confirme %}
+                                        <span class="badge" style="background-color: var(--success); color: white;">
+                                            <i class="fas fa-check-circle"></i> Payée
+                                        </span>
+                                        <br>
+                                        <small style="color: var(--success); font-weight: 500; display: block; margin-top: 4px;">
+                                            {{ commande.date_paiement|date:"d/m/Y H:i" }}
+                                        </small>
+                                    {% else %}
+                                        <span class="badge" style="background-color: var(--warning); color: white;">
+                                            <i class="fas fa-clock"></i> En Attente
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small style="color: var(--light-text);">{{ commande.date_commande|date:"d/m/Y H:i" }}</small>
+                                </td>
+                                <td style="text-align: center;">
+                                    <div class="btn-actions">
+                                        {% if not commande.paiement_confirme %}
+                                            <form method="POST" action="{% url 'stock:marquer_commande_payee' commande.code_cmd %}" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn-action btn-modify" title="Marquer comme payée" onclick="return confirm('Confirmer le paiement de cette commande?')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert-custom">
+                    <i class="fas fa-inbox" style="font-size: 1.2rem; margin-right: 8px;"></i>
+                    <strong>Aucune commande</strong><br>
+                    Vous n'avez pas encore reçu de commandes de la part des agents.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Section Factures -->
+    <div class="row mb-4 mb-md-5" id="factures">
+        <div class="col-12">
+            <h3 class="section-title">
+                <i class="fas fa-receipt"></i> Factures
+            </h3>
+            {% if factures %}
+                <div class="table-wrapper">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>N° Facture</th>
+                                    <th>Commande</th>
+                                    <th>Agent</th>
+                                    <th>Produit</th>
+                                    <th>Montant</th>
+                                    <th>Statut</th>
+                                    <th>Date</th>
+                                    <th style="text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for facture in factures %}
+                            <tr>
+                                <td>
+                                    <strong style="color: var(--primary);">#{{ facture.code_facture }}</strong>
+                                </td>
+                                <td>
+                                    <a href="#" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+                                        #{{ facture.commande.code_cmd }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <div style="color: var(--primary); font-weight: 500;">
+                                        {% if facture.agent_utilisateur %}
+                                            <i class="fas fa-user"></i> {{ facture.agent_utilisateur.first_name }} {{ facture.agent_utilisateur.last_name }}
+                                        {% else %}
+                                            <span style="color: var(--danger);">Non assigné</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>{{ facture.commande.code_prod.nom_prod }}</strong>
+                                </td>
+                                <td>
+                                    <strong style="color: var(--danger);">{{ facture.montant_total|floatformat:2 }}€</strong>
+                                </td>
+                                <td>
+                                    {% if facture.statut == 'brouillon' %}
+                                        <span class="badge" style="background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); color: white;">
+                                            <i class="fas fa-file"></i> Brouillon
+                                        </span>
+                                    {% elif facture.statut == 'validee' %}
+                                        <span class="badge" style="background: linear-gradient(135deg, var(--info) 0%, #0e7490 100%); color: white;">
+                                            <i class="fas fa-check-circle"></i> Validée
+                                        </span>
+                                    {% elif facture.statut == 'payee' %}
+                                        <span class="badge" style="background: linear-gradient(135deg, var(--success) 0%, #047857 100%); color: white;">
+                                            <i class="fas fa-check-double"></i> Payée
+                                        </span>
+                                    {% elif facture.statut == 'annulee' %}
+                                        <span class="badge" style="background: linear-gradient(135deg, var(--danger) 0%, #b91c1c 100%); color: white;">
+                                            <i class="fas fa-times-circle"></i> Annulée
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small style="color: var(--light-text);">{{ facture.date_facture|date:"d/m/Y H:i" }}</small>
+                                </td>
+                                <td style="text-align: center;">
+                                    <div class="btn-actions">
+                                        {% if facture.statut != 'annulee' %}
+                                            {% if facture.statut != 'payee' %}
+                                                <form method="POST" action="{% url 'stock:valider_paiement_facture' facture.code_facture %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn-action btn-modify" title="Valider le paiement" onclick="return confirm('Confirmer le paiement de cette facture?')">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            <a href="{% url 'stock:detailler_facture_fournisseur' facture.code_facture %}" class="btn-action btn-modify" title="Voir détails">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert-custom">
+                    <i class="fas fa-file-alt" style="font-size: 1.2rem; margin-right: 8px;"></i>
+                    <strong>Aucune facture</strong><br>
+                    Vous n'avez pas encore de factures. Elles apparaîtront ici une fois générées.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer avec informations supplémentaires -->
+    <div class="row mt-4 mt-md-5" style="border-top: 2px solid var(--border-color); padding-top: 30px; margin-bottom: 30px;">
+        <div class="col-12">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 25px; border-radius: 16px; border-left: 5px solid var(--primary); box-shadow: 0 4px 12px rgba(91, 33, 182, 0.08);">
+                    <h6 style="color: var(--primary); font-weight: 700; margin-bottom: 15px; font-size: 1.05rem;">
+                        <i class="fas fa-chart-line"></i> Résumé Général
+                    </h6>
+                    <p style="margin: 8px 0; color: var(--dark-text);">
+                        <span style="display: inline-block; width: 120px; font-weight: 600;">Total Produits:</span>
+                        <strong style="color: var(--primary);">{{ total_produits }}</strong>
+                    </p>
+                    <p style="margin: 8px 0; color: var(--dark-text);">
+                        <span style="display: inline-block; width: 120px; font-weight: 600;">Valeur Stock:</span>
+                        <strong style="color: var(--primary);">
+                            {% if produits %}{{ total_valeur_stock|floatformat:2 }}€{% else %}0.00€{% endif %}
+                        </strong>
+                    </p>
+                </div>
+                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 25px; border-radius: 16px; border-left: 5px solid var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);">
+                    <h6 style="color: var(--success); font-weight: 700; margin-bottom: 15px; font-size: 1.05rem;">
+                        <i class="fas fa-wallet"></i> Finances
+                    </h6>
+                    <p style="margin: 8px 0; color: var(--dark-text);">
+                        <span style="display: inline-block; width: 120px; font-weight: 600;">Montant Payé:</span>
+                        <strong style="color: var(--success);">{{ montant_payees|floatformat:2 }}€</strong>
+                    </p>
+                    <p style="margin: 8px 0; color: var(--dark-text);">
+                        <span style="display: inline-block; width: 120px; font-weight: 600;">En Attente:</span>
+                        <strong style="color: var(--warning);">{{ montant_non_payees|floatformat:2 }}€</strong>
+                    </p>
+                </div>
+                <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 25px; border-radius: 16px; border-left: 5px solid var(--warning); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);">
+                    <h6 style="color: var(--warning); font-weight: 700; margin-bottom: 15px; font-size: 1.05rem;">
+                        <i class="fas fa-headset"></i> Besoin d'aide?
+                    </h6>
+                    <p style="margin: 8px 0; color: var(--dark-text); font-size: 0.95rem;">
+                        Consultez la documentation ou contactez l'équipe support pour toute assistance.
+                    </p>
+                    <p style="margin: 12px 0 0 0;">
+                        <a href="#" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+                            Accéder à l'aide <i class="fas fa-arrow-right" style="margin-left: 6px;"></i>
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Initialiser les tooltips
+    $(function() {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+    
+    // Animation fluide au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animations des stat-cards
+        document.querySelectorAll('.stat-card').forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 50 + index * 100);
+        });
+        
+        // Hover effects sur les lignes du tableau
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.01)';
+            });
+            row.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    });
+</script>
+{% endblock %}
+

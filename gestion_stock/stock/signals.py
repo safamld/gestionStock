@@ -66,8 +66,7 @@ def contacter_fournisseurs(produit, notification):
     """
     # Récupérer les fournisseurs du produit
     produits_fournisseurs = ProduitFournisseur.objects.filter(
-        produit=produit,
-        fournisseur__is_actif=True
+        produit=produit
     ).select_related('fournisseur').order_by('-is_principal')
     
     for pf in produits_fournisseurs:
@@ -145,3 +144,38 @@ def notification_commande_confirmee(sender, instance, created, **kwargs):
             titre=f'✅ Commande confirmée: {instance.code_prod.nom_prod}',
             message=f'Commande #{instance.code_cmd} créée avec succès.\n\nProduit: {instance.code_prod.nom_prod}\nQuantité: {instance.quantite_cmd}\nMontant: {instance.montant_commande()}€',
         )
+
+
+# ==================== CRÉATION AUTOMATIQUE DE FACTURE ====================
+
+@receiver(post_save, sender=Commande)
+def creer_facture_automatique(sender, instance, created, **kwargs):
+    """
+    Signal pour créer automatiquement une facture quand une commande est créée.
+    """
+    from .models import Facture, MontantAgent
+    
+    if created and not instance.is_deleted:
+        # Vérifier qu'une facture n'existe pas déjà pour cette commande
+        facture_exists = Facture.objects.filter(commande=instance).exists()
+        
+        if not facture_exists:
+            # Calculer le montant
+            montant = instance.quantite_cmd * instance.code_prod.prix_unit
+            
+            # Créer la facture
+            facture = Facture.objects.create(
+                commande=instance,
+                montant_total=montant,
+                agent_utilisateur=instance.agent_utilisateur,
+                statut='brouillon'
+            )
+            
+            # Ajouter le montant au compte de l'agent
+            if instance.agent_utilisateur:
+                montant_agent, _ = MontantAgent.objects.get_or_create(
+                    agent_utilisateur=instance.agent_utilisateur
+                )
+                montant_agent.ajouter_montant(montant)
+            
+            print(f"✅ Facture #{facture.code_facture} créée automatiquement pour Commande #{instance.code_cmd}")

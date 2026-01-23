@@ -305,16 +305,8 @@
         <div class="quick-actions">
             <h2>⚡ Actions Rapides</h2>
             <div class="action-buttons">
-                {% if 'add_produit' in permissions %}
-                <a href="{% url 'stock:produit_create' %}" class="action-btn">+ Ajouter un Produit</a>
-                {% endif %}
-                
                 {% if 'add_commande' in permissions %}
                 <a href="{% url 'stock:commande_create' %}" class="action-btn">+ Nouvelle Commande</a>
-                {% endif %}
-                
-                {% if 'add_facture' in permissions %}
-                <a href="{% url 'stock:facture_create' %}" class="action-btn">+ Nouvelle Facture</a>
                 {% endif %}
                 
                 <a href="{% url 'admin:index' %}" class="action-btn">⚙️ Admin Django</a>

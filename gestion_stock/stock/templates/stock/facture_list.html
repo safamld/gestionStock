@@ -4,13 +4,93 @@
 {% block header %}Factures{% endblock %}
 
 {% block content %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #f0f4ff 0%, #fdf2f8 100%);
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    .agents-table {
+        width: 100%;
+        margin-bottom: 32px;
+    }
+
+    .agents-table th {
+        background: #f8fafc;
+        color: #1e293b;
+        font-weight: 700;
+        padding: 12px;
+        text-align: left;
+        border-bottom: 2px solid #e2e8f0;
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+
+    .agents-table td {
+        padding: 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .agents-table tr:hover {
+        background: #f8fafc;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .badge-primary {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .badge-success {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .badge-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+</style>
+
 <div class="mb-6 flex justify-between items-center">
     <div>
         <p class="text-gray-600">
             <i class="fas fa-file-invoice mr-2"></i>
             <strong>{{ paginator.count }}</strong> facture(s) | 
             Montant: <strong class="text-purple-600">{{ montant_total|floatformat:2 }}€</strong> | 
-            Payées: <strong class="text-green-600">{{ payees }}</strong>
+            Payées: <strong class="text-green-600">{{ payees }}</strong> | 
+            Non payées: <strong class="text-red-600">{{ non_payees }}</strong>
         </p>
     </div>
     <a href="{% url 'stock:facture_create' %}" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition font-semibold">
@@ -18,62 +98,227 @@
     </a>
 </div>
 
+<!-- Stats générales -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Factures</div>
+        <div class="stat-value">{{ total_factures }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Montant Total</div>
+        <div class="stat-value">{{ montant_total|floatformat:0 }}€</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Payées</div>
+        <div class="stat-value">{{ payees }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Non Payées</div>
+        <div class="stat-value">{{ non_payees }}</div>
+    </div>
+</div>
+
+<!-- Stats par agent -->
+{% if agents_stats %}
+<div class="card bg-white rounded-lg p-6 mb-6">
+    <h3 class="text-lg font-bold text-gray-800 mb-4">
+        <i class="fas fa-users mr-2"></i> Factures par Agent
+    </h3>
+    <table class="agents-table">
+        <thead>
+            <tr>
+                <th>Agent</th>
+                <th style="text-align: center;">Factures</th>
+                <th style="text-align: center;">Payées</th>
+                <th style="text-align: center;">Non Payées</th>
+                <th style="text-align: right;">Montant Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in agents_stats %}
+            <tr>
+                <td>
+                    <strong>{{ stat.agent.get_full_name|default:stat.agent.username }}</strong>
+                </td>
+                <td style="text-align: center;">
+                    <span class="badge badge-primary">{{ stat.factures_count }}</span>
+                </td>
+                <td style="text-align: center;">
+                    <span class="badge badge-success">{{ stat.payees }}</span>
+                </td>
+                <td style="text-align: center;">
+                    <span class="badge badge-danger">{{ stat.non_payees }}</span>
+                </td>
+                <td style="text-align: right; font-weight: bold; color: #667eea;">
+                    {{ stat.montant_total|floatformat:2 }}€
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
 {% if factures %}
-    <div class="card bg-white rounded-lg overflow-hidden">
-        <table class="w-full">
-            <thead class="bg-gray-100 border-b-2 border-gray-300">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Facture N°</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Commande</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Montant</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Statut</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
-                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for facture in factures %}
-                    <tr class="border-b hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 text-sm font-mono text-gray-600">
-                            <a href="{% url 'stock:facture_detail' facture.pk %}" class="text-blue-600 hover:text-blue-800 font-bold">
-                                #{{ facture.code_facture }}
-                            </a>
-                        </td>
-                        <td class="px-6 py-4 text-sm">
-                            <a href="{% url 'stock:commande_detail' facture.commande.pk %}" class="text-blue-600 hover:text-blue-800 font-semibold">
-                                Cmd #{{ facture.commande.code_cmd }}
-                            </a>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-right font-bold text-purple-600">{{ facture.montant_total|floatformat:2 }}€</td>
-                        <td class="px-6 py-4 text-sm">
-                            {% if facture.statut == 'brouillon' %}
-                                <span class="bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-xs font-bold">Brouillon</span>
-                            {% elif facture.statut == 'validee' %}
-                                <span class="bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Validée</span>
-                            {% elif facture.statut == 'payee' %}
-                                <span class="bg-green-200 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Payée</span>
-                            {% else %}
-                                <span class="bg-red-200 text-red-800 px-3 py-1 rounded-full text-xs font-bold">Annulée</span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ facture.date_facture|date:"d/m/Y H:i" }}</td>
-                        <td class="px-6 py-4 text-sm text-center">
-                            <div class="flex justify-center space-x-2">
-                                <a href="{% url 'stock:facture_detail' facture.pk %}" class="text-blue-600 hover:text-blue-800" title="Voir">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{% url 'stock:facture_update' facture.pk %}" class="text-green-600 hover:text-green-800" title="Modifier">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="{% url 'stock:facture_delete' facture.pk %}" class="text-red-600 hover:text-red-800" title="Supprimer">
-                                    <i class="fas fa-trash"></i>
-                                </a>
-                            </div>
-                        </td>
+    <!-- Vue Desktop/Tablet (Tableau) -->
+    <div class="hidden lg:block card bg-white rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-100 border-b-2 border-gray-300">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">Facture N°</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">Commande</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">Produit</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">Montant</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">Statut</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">Date</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">Actions</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for facture in factures %}
+                        <tr class="border-b hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 text-sm font-mono text-gray-600 whitespace-nowrap">
+                                <a href="{% url 'stock:facture_detail' facture.pk %}" class="text-blue-600 hover:text-blue-800 font-bold">
+                                    #{{ facture.code_facture }}
+                                </a>
+                            </td>
+                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                                {% if facture.commande %}
+                                    <a href="{% url 'stock:commande_detail' facture.commande.pk %}" class="text-blue-600 hover:text-blue-800 font-semibold">
+                                        Cmd #{{ facture.commande.code_cmd }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-gray-400 italic">Supprimée</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm font-semibold text-gray-800 max-w-xs truncate">
+                                {% if facture.commande %}
+                                    {{ facture.commande.code_prod.nom_prod }}
+                                {% else %}
+                                    <span class="text-gray-400 italic">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-right font-bold text-purple-600 whitespace-nowrap">{{ facture.montant_total|floatformat:2 }}€</td>
+                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                                {% if facture.statut == 'brouillon' %}
+                                    <span class="bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-xs font-bold">Brouillon</span>
+                                {% elif facture.statut == 'validee' %}
+                                    <span class="bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Validée</span>
+                                {% elif facture.statut == 'payee' %}
+                                    <span class="bg-green-200 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Payée</span>
+                                {% else %}
+                                    <span class="bg-red-200 text-red-800 px-3 py-1 rounded-full text-xs font-bold">Annulée</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ facture.date_facture|date:"d/m/Y H:i" }}</td>
+                            <td class="px-6 py-4 text-sm text-center whitespace-nowrap">
+                                <div class="flex justify-center space-x-2">
+                                    <a href="{% url 'stock:facture_detail' facture.pk %}" class="text-blue-600 hover:text-blue-800" title="Voir">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if user.is_staff or user.is_superuser %}
+                                    <a href="{% url 'stock:facture_update' facture.pk %}" class="text-green-600 hover:text-green-800" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'stock:facture_delete' facture.pk %}" class="text-red-600 hover:text-red-800" title="Supprimer">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Vue Mobile (Cartes) -->
+    <div class="lg:hidden space-y-4">
+        {% for facture in factures %}
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <!-- En-tête -->
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-4 border-b border-gray-200">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <div class="text-xs font-semibold text-gray-500 uppercase">Facture</div>
+                        <a href="{% url 'stock:facture_detail' facture.pk %}" class="text-lg font-bold text-purple-600 hover:text-purple-700">
+                            #{{ facture.code_facture }}
+                        </a>
+                    </div>
+                    <div>
+                        {% if facture.statut == 'brouillon' %}
+                            <span class="inline-block bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-xs font-bold">Brouillon</span>
+                        {% elif facture.statut == 'validee' %}
+                            <span class="inline-block bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Validée</span>
+                        {% elif facture.statut == 'payee' %}
+                            <span class="inline-block bg-green-200 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Payée</span>
+                        {% else %}
+                            <span class="inline-block bg-red-200 text-red-800 px-3 py-1 rounded-full text-xs font-bold">Annulée</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenu -->
+            <div class="p-4 space-y-3">
+                <!-- Ligne 1: Commande & Produit -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <div class="text-xs font-semibold text-gray-500 uppercase mb-1">Commande</div>
+                        <div class="font-semibold text-gray-800">
+                            {% if facture.commande %}
+                                <a href="{% url 'stock:commande_detail' facture.commande.pk %}" class="text-blue-600 hover:text-blue-700">
+                                    #{{ facture.commande.code_cmd }}
+                                </a>
+                            {% else %}
+                                <span class="text-gray-400 italic text-sm">Supprimée</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-gray-500 uppercase mb-1">Produit</div>
+                        <div class="font-semibold text-gray-800 truncate">
+                            {% if facture.commande %}
+                                {{ facture.commande.code_prod.nom_prod|truncatewords:3 }}
+                            {% else %}
+                                <span class="text-gray-400 italic text-sm">-</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ligne 2: Montant & Date -->
+                <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200">
+                    <div>
+                        <div class="text-xs font-semibold text-gray-500 uppercase mb-1">Montant</div>
+                        <div class="text-xl font-bold text-purple-600">{{ facture.montant_total|floatformat:2 }}€</div>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-gray-500 uppercase mb-1">Date</div>
+                        <div class="text-sm text-gray-600">{{ facture.date_facture|date:"d/m/Y" }}</div>
+                        <div class="text-xs text-gray-500">{{ facture.date_facture|date:"H:i" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="bg-gray-50 p-4 border-t border-gray-200 flex gap-2 justify-end">
+                <a href="{% url 'stock:facture_detail' facture.pk %}" class="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-medium transition">
+                    <i class="fas fa-eye"></i> Voir
+                </a>
+                {% if user.is_staff or user.is_superuser %}
+                <a href="{% url 'stock:facture_update' facture.pk %}" class="inline-flex items-center gap-2 px-3 py-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-sm font-medium transition">
+                    <i class="fas fa-edit"></i> Modifier
+                </a>
+                <a href="{% url 'stock:facture_delete' facture.pk %}" class="inline-flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition">
+                    <i class="fas fa-trash"></i> Supprimer
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
     </div>
     
     <!-- Pagination -->

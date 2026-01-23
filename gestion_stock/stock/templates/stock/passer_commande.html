@@ -1,0 +1,113 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+
+{% block title %}Passer une Commande{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h2 class="mb-0" style="color: white;">
+                        <i class="fas fa-shopping-cart"></i> Passer une Commande
+                    </h2>
+                </div>
+                <div class="card-body p-5">
+                    <!-- Détails du Produit -->
+                    <div class="mb-4 p-3" style="background-color: #f0f9ff; border-left: 4px solid #0891b2; border-radius: 4px;">
+                        <h5 style="color: #1e40af;">
+                            <i class="fas fa-box"></i> {{ produit.nom_prod }}
+                        </h5>
+                        <p class="text-muted mb-2">{{ produit.description }}</p>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <strong>Prix Unitaire:</strong>
+                                <p style="color: #dc2626; font-size: 1.25rem;">{{ produit.prix_unit|floatformat:2 }}€</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Stock Disponible:</strong>
+                                <p style="color: #16a34a; font-size: 1.25rem;">{{ produit.quantite }} unités</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire -->
+                    <form method="POST" class="mt-4">
+                        {% csrf_token %}
+
+                        <div class="form-group mb-4">
+                            <label for="quantite" class="form-label" style="color: #1e40af; font-weight: 600;">
+                                <i class="fas fa-cubes"></i> Quantité à Commander
+                            </label>
+                            <input type="number" id="quantite" name="quantite" class="form-control" 
+                                   min="1" max="{{ produit.quantite }}" value="1" required
+                                   style="border: 2px solid #1e40af; padding: 10px;">
+                            <small class="form-text text-muted mt-2">
+                                Maximum: {{ produit.quantite }} unités disponibles
+                            </small>
+                        </div>
+
+                        <!-- Aperçu du Montant -->
+                        <div class="alert alert-info mt-4" style="background-color: #eff6ff; border-left: 4px solid #0891b2;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Quantité:</strong> <span id="preview_qty">1</span> u
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Montant Total:</strong> <span id="preview_total" style="color: #dc2626; font-weight: bold;">{{ produit.prix_unit|floatformat:2 }}€</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Boutons -->
+                        <div class="d-flex gap-3 mt-5">
+                            <a href="{% url 'stock:agent_dashboard' %}" class="btn btn-outline-secondary" style="flex: 1; padding: 10px;">
+                                <i class="fas fa-arrow-left"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary" style="flex: 1; padding: 10px; background-color: #1e40af; border-color: #1e40af;">
+                                <i class="fas fa-check"></i> Confirmer la Commande
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Informations Importantes -->
+            <div class="alert alert-warning mt-4" style="border-left: 4px solid #f59e0b;">
+                <h6 style="color: #92400e; font-weight: 600;">
+                    <i class="fas fa-info-circle"></i> Information
+                </h6>
+                <p class="mb-0 text-muted">
+                    Une fois votre commande validée, une facture sera générée automatiquement et le montant 
+                    sera ajouté à votre compte. Vous pouvez consulter l'historique dans votre dashboard.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const quantiteInput = document.getElementById('quantite');
+    const prixUnitaire = {{ produit.prix_unit }};
+    const maxQuantite = {{ produit.quantite }};
+
+    quantiteInput.addEventListener('input', function() {
+        let qty = parseInt(this.value) || 0;
+        
+        if (qty > maxQuantite) {
+            qty = maxQuantite;
+            this.value = qty;
+        }
+        if (qty < 1) {
+            qty = 1;
+            this.value = qty;
+        }
+
+        const total = qty * prixUnitaire;
+        document.getElementById('preview_qty').textContent = qty;
+        document.getElementById('preview_total').textContent = total.toFixed(2) + '€';
+    });
+</script>
+{% endblock %}

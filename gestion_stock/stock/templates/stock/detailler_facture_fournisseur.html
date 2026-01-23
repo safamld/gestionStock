@@ -1,0 +1,308 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+
+{% block title %}Détails Facture #{{ facture.code_facture }}{% endblock %}
+
+{% block content %}
+<style>
+    .invoice-header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .invoice-section {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .invoice-section h4 {
+        color: #1e40af;
+        border-bottom: 2px solid #1e40af;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+        font-weight: 700;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #4b5563;
+        min-width: 150px;
+    }
+    
+    .info-value {
+        color: #1e40af;
+        font-weight: 700;
+        text-align: right;
+        flex: 1;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    
+    .status-brouillon { background-color: #9ca3af; color: white; }
+    .status-validee { background-color: #3b82f6; color: white; }
+    .status-payee { background-color: #10b981; color: white; }
+    .status-annulee { background-color: #ef4444; color: white; }
+    
+    .montant-total {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 8px;
+        text-align: center;
+        margin: 30px 0;
+    }
+    
+    .montant-total-label {
+        font-size: 0.95rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .montant-total-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-top: 10px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 30px;
+    }
+    
+    @media (max-width: 768px) {
+        .invoice-header {
+            padding: 20px;
+        }
+        
+        .info-row {
+            flex-direction: column;
+        }
+        
+        .info-label {
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            text-align: left;
+        }
+        
+        .montant-total-value {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <!-- Header avec numéro de facture -->
+    <div class="invoice-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h1 style="margin-bottom: 5px; font-size: 2.5rem;">
+                    <i class="fas fa-file-invoice-dollar"></i> Facture #{{ facture.code_facture }}
+                </h1>
+                <p style="opacity: 0.9; margin-bottom: 0;">
+                    Émise le {{ facture.date_facture|date:"d/m/Y à H:i" }}
+                </p>
+            </div>
+            <div style="text-align: right;">
+                <div class="status-badge status-{{ facture.statut }}">
+                    {% if facture.statut == 'brouillon' %}
+                        <i class="fas fa-file"></i> Brouillon
+                    {% elif facture.statut == 'validee' %}
+                        <i class="fas fa-check-circle"></i> Validée
+                    {% elif facture.statut == 'payee' %}
+                        <i class="fas fa-check-double"></i> Payée
+                    {% elif facture.statut == 'annulee' %}
+                        <i class="fas fa-times-circle"></i> Annulée
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu de la facture -->
+    <div class="row">
+        <div class="col-md-6">
+            <!-- Informations du Fournisseur -->
+            <div class="invoice-section">
+                <h4><i class="fas fa-industry"></i> Fournisseur</h4>
+                <div class="info-row">
+                    <div class="info-label">Entreprise:</div>
+                    <div class="info-value">{{ fournisseur.nom_fournisseur }}</div>
+                </div>
+                {% if fournisseur.email %}
+                <div class="info-row">
+                    <div class="info-label">Email:</div>
+                    <div class="info-value" style="color: #6b7280; font-size: 0.95rem;">{{ fournisseur.email }}</div>
+                </div>
+                {% endif %}
+                {% if fournisseur.telephone %}
+                <div class="info-row">
+                    <div class="info-label">Téléphone:</div>
+                    <div class="info-value" style="color: #6b7280; font-size: 0.95rem;">{{ fournisseur.telephone }}</div>
+                </div>
+                {% endif %}
+                {% if fournisseur.adresse %}
+                <div class="info-row">
+                    <div class="info-label">Adresse:</div>
+                    <div class="info-value" style="color: #6b7280; font-size: 0.95rem;">{{ fournisseur.adresse }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <!-- Informations de l'Agent -->
+            <div class="invoice-section">
+                <h4><i class="fas fa-user"></i> Agent Acheteur</h4>
+                {% if facture.agent_utilisateur %}
+                <div class="info-row">
+                    <div class="info-label">Nom:</div>
+                    <div class="info-value">{{ facture.agent_utilisateur.first_name }} {{ facture.agent_utilisateur.last_name }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Email:</div>
+                    <div class="info-value" style="color: #6b7280; font-size: 0.95rem;">{{ facture.agent_utilisateur.email }}</div>
+                </div>
+                {% else %}
+                <div style="color: #ef4444; font-weight: 600;">
+                    <i class="fas fa-exclamation-triangle"></i> Agent non assigné
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Détails de la Commande -->
+    <div class="invoice-section">
+        <h4><i class="fas fa-shopping-cart"></i> Détails de la Commande</h4>
+        <div class="table-responsive">
+            <table class="table" style="margin-bottom: 0;">
+                <thead style="background-color: #f0f9ff; border-bottom: 2px solid #1e40af;">
+                    <tr>
+                        <th style="color: #1e40af; font-weight: 700;">Produit</th>
+                        <th style="color: #1e40af; font-weight: 700; text-align: right;">Quantité</th>
+                        <th style="color: #1e40af; font-weight: 700; text-align: right;">Prix Unitaire</th>
+                        <th style="color: #1e40af; font-weight: 700; text-align: right;">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <strong>{{ commande.code_prod.nom_prod }}</strong>
+                            {% if commande.code_prod.description %}
+                            <br>
+                            <small style="color: #6b7280;">{{ commande.code_prod.description|truncatewords:20 }}</small>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <span class="badge" style="background-color: #0891b2; color: white; padding: 4px 8px; border-radius: 8px;">
+                                {{ commande.quantite_cmd }} u
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <strong>{{ commande.code_prod.prix_unit|floatformat:2 }}€</strong>
+                        </td>
+                        <td style="text-align: right;">
+                            <strong style="color: #059669;">{{ commande.montant_commande|floatformat:2 }}€</strong>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Montant Total -->
+    <div class="montant-total">
+        <div class="montant-total-label">Montant Total TTC</div>
+        <div class="montant-total-value">{{ facture.montant_total|floatformat:2 }}€</div>
+    </div>
+
+    <!-- Informations Supplémentaires -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="invoice-section">
+                <h4><i class="fas fa-info-circle"></i> Référence Commande</h4>
+                <div class="info-row">
+                    <div class="info-label">N° Commande:</div>
+                    <div class="info-value">#{{ commande.code_cmd }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Date Commande:</div>
+                    <div class="info-value" style="color: #6b7280; font-size: 0.95rem;">
+                        {{ commande.date_commande|date:"d/m/Y à H:i" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="invoice-section">
+                <h4><i class="fas fa-calendar"></i> Dates de la Facture</h4>
+                <div class="info-row">
+                    <div class="info-label">Émise:</div>
+                    <div class="info-value" style="color: #6b7280; font-size: 0.95rem;">
+                        {{ facture.date_facture|date:"d/m/Y à H:i" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-buttons">
+        <a href="{% url 'stock:fournisseur_dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Retour au Dashboard
+        </a>
+        {% if facture.statut != 'payee' and facture.statut != 'annulee' %}
+            <form method="POST" action="{% url 'stock:valider_paiement_facture' facture.code_facture %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('Confirmer le paiement de cette facture?')">
+                    <i class="fas fa-check-circle"></i> Valider le Paiement
+                </button>
+            </form>
+        {% else %}
+            {% if facture.statut == 'payee' %}
+                <div class="alert alert-success" style="margin-bottom: 0; flex: 1; max-width: none;">
+                    <i class="fas fa-check-double"></i> Cette facture a déjà été payée.
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Imprimer la facture
+    function printInvoice() {
+        window.print();
+    }
+</script>
+{% endblock %}
